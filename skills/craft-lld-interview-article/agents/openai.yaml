@@ -1,0 +1,4 @@
+interface:
+  display_name: "Craft LLD Interview Article"
+  short_description: "Build interview-sized LLD articles with code"
+  default_prompt: "Use $craft-lld-interview-article to turn this LLD prompt into a narrative interview article with diagrams and runnable code."

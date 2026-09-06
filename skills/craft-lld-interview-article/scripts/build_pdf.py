@@ -145,6 +145,11 @@ def styles(body_font: str, mono_font: str) -> dict[str, ParagraphStyle]:
             spaceAfter=2 * mm, backColor=PALE_GRAY, borderColor=LINE,
             borderWidth=0.35, borderPadding=1.4 * mm,
         ),
+        "appendix_path": ParagraphStyle(
+            "LLDAppendixPath", parent=base["Heading2"], fontName=body_font,
+            fontSize=9.5, leading=12.5, textColor=BLUE, spaceBefore=4 * mm,
+            spaceAfter=2 * mm, keepWithNext=True,
+        ),
         "table": ParagraphStyle(
             "LLDTable", parent=base["BodyText"], fontName=body_font,
             fontSize=7.6, leading=10, textColor=INK,
@@ -664,7 +669,7 @@ def appendix_story(files: Iterable[Path], solution_dir: Path, style: dict[str, P
     add_code(story, "\n".join(manifest_lines), style["appendix_code"], 100)
     for path in files:
         relative = Path("solution") / path.relative_to(solution_dir)
-        story.append(Paragraph(inline_markup(relative.as_posix(), mono_font), style["h2"]))
+        story.append(Paragraph(inline_markup(relative.as_posix(), mono_font), style["appendix_path"]))
         code = path.read_text(encoding="utf-8", errors="replace")
         lines = code.splitlines() or [""]
         page_count = max(1, math.ceil(len(lines) / 90))
@@ -672,7 +677,10 @@ def appendix_story(files: Iterable[Path], solution_dir: Path, style: dict[str, P
         for offset in range(0, len(lines), chunk_size):
             if offset:
                 story.append(PageBreak())
-                story.append(Paragraph(inline_markup(f"{relative.as_posix()} (continued)", mono_font), style["h2"]))
+                story.append(Paragraph(
+                    inline_markup(f"{relative.as_posix()} (continued)", mono_font),
+                    style["appendix_path"],
+                ))
             add_code(story, "\n".join(lines[offset:offset + chunk_size]), style["appendix_code"], 105)
     return story
 

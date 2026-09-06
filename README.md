@@ -9,13 +9,16 @@ A collection of reusable, practical AI skills and agent workflows. The emphasis 
 Turns an underspecified low-level design or object-oriented design prompt into an original, interview-sized teaching article with:
 
 - requirements discovery and explicit scope;
-- contextual Bad, Good, and Great design comparisons;
+- contextual alternatives, including Bad/Good/Great only when the decision earns them;
+- requirement-led state and method derivation for every central class;
 - UML-lite Mermaid diagrams;
 - a focused class and API design;
-- a complete runnable implementation and tests;
+- a sensibly packaged runnable implementation and tests;
+- question-and-level-named Markdown and matching PDF outputs;
+- the complete verified codebase in the PDF appendix;
 - verification, extensions, and level-specific expectations.
 
-The skill is designed around a typical one-hour interview. It favors the smallest design that preserves the important invariants and clearly separates interview implementation from production follow-ups.
+The skill is designed around a typical one-hour interview. It favors the smallest design that preserves the important invariants, shows how each class was earned, and clearly separates interview implementation from production follow-ups.
 
 ### `tailor-tech-job-application`
 

@@ -4,85 +4,110 @@
 
 ## Understanding the Problem
 
-State the short prompt, the initial ambiguity, and the interview-sized interpretation.
+Give the short domain primer and the interview-sized interpretation.
+
+> **Prompt:** State the deliberately short question.
 
 ### Clarifying Questions
 
-Write a compact candidate/interviewer dialogue. After meaningful answers, add the immediate design consequence.
+Write a compact candidate/interviewer dialogue. After a meaningful answer, explain the immediate consequence for the design.
 
 ### Final Requirements
 
-1. List the supported behavior.
-2. Include lifecycle and invalid-action rules.
+1. List observable supported behavior.
+2. Include lifecycle rules, invalid actions, and any important invariant.
 
 ### Out of Scope
 
 - Name excluded production concerns and plausible extensions.
 
-## Core Entities and Responsibilities
+## Finding the Core Entities
 
-Explain why each retained entity deserves to exist. Identify the public orchestrator and invariant owners.
+Classify the useful nouns. Explain why central classes remain and why tempting concepts become values, enums, fields, constants, parameters, or external concerns.
 
-| Entity | Responsibility | State or invariant owned |
+| Candidate | Keep as | Reason |
 |---|---|---|
-| `Example` | Replace this row | Replace this row |
+| `CandidateName` | Class / record / enum / field / reject | Requirement or invariant that justifies the choice |
+
+### Responsibilities at a Glance
+
+| Type | Responsibility | State or invariant owned |
+|---|---|---|
+| `CentralType` | Public workflow or domain responsibility | Authoritative mutable fact |
 
 ## Exploring the Design
 
-### Decision 1: Replace with a real pressure point
+### Decision: Name a consequential pressure point
 
-#### Bad: A plausible first attempt
+Present only the alternatives the decision genuinely needs. A design may use Bad → Great, Good → Great, Bad → Good → Great, an unlabeled options table, or no ladder at all.
 
-Show why it is attractive, then break it with a concrete scenario.
-
-#### Good: The minimal repair
-
-Change the dimension responsible for the failure, replay the scenario, and state the cost.
-
-#### Great: Best fit for these constraints
-
-Include this section only when a distinct, justified option exists. Great may be simpler than Good.
+Run one concrete scenario through the alternatives and select the least complex option that satisfies the contract.
 
 **Recommendation:** Implement in interview / Mention if asked / Production extension.
 
 ## Class Design
 
-Derive the orchestrator first, then supporting classes from requirements and invariants.
+Derive every central class. Repeat this subsection for each one; group only tiny records, enums, exceptions, and helpers.
 
-```mermaid
-classDiagram
-    class ReplaceMe
+### `CentralClass`: responsibility
+
+Explain why it exists, what it owns, and what it must not know.
+
+| Requirement or invariant | State needed | Why this owner |
+|---|---|---|
+| Replace with a problem-specific fact | `fieldName` | Ownership reason |
+
+| Caller need or transition | Method | Result or mutation |
+|---|---|---|
+| Replace with a problem-specific action | `methodName(...)` | What changes or returns |
+
+```text
+class CentralClass
+  field: Type
+  operation(input): Result
 ```
+
+**Invariant:** State the rule this class preserves.
+**Collaborators:** Name only direct collaborators and why they are needed.
 
 ## Final Class Design
 
-Consolidate the selected classes, important fields, and method signatures in code-shaped notation.
+Consolidate the selected fields, methods, interfaces, enums, and relationships in compact notation.
+
+```mermaid
+classDiagram
+    class CentralClass
+```
+
+Explain the ownership or call boundary the reader should notice.
 
 ## Core Implementation
 
-Explain two to four revealing operations.
+Explain two to four revealing operations. Give the most space to the operation that protects the main invariant.
 
-### Operation 1
+### Operation: Name the workflow
 
-Cover the happy path, invalid states, validation order, pseudocode, delegation, and mutation order.
+Cover the happy path, relevant illegal states, validation order, pseudocode, delegation, and mutation order.
 
 ## Complete Runnable Implementation
 
-Point to the real files under `solution/`. State exact compile, test, and demo commands.
+Point to the real packaged files under `solution/`. Explain the directory boundaries and give exact compile, test, and demo commands plus their observed outcomes.
+
+The PDF generated from this Markdown adds every source, test, and required build file in **Appendix: Complete Runnable Code**.
 
 ## Verification Walkthrough
 
-Replay one concrete scenario and connect each step to its owner, mutation, invariant, and result.
+Replay one concrete scenario. Connect each call to its validator, state read, mutation, invariant, and result.
 
 ## Extensibility
 
-Explain two to four likely follow-ups and the localized changes each would require.
+Explain two to four likely follow-ups and the smallest localized change each requires.
 
 ## What Is Expected at Each Level
 
 ### Junior
 
-State the minimum coherent solution.
+State the minimum coherent solution and the hints an interviewer may provide.
 
 ### Mid-level
 
@@ -90,4 +115,4 @@ State the expected ownership, alternatives, and edge-case reasoning.
 
 ### Senior
 
-State the expected tradeoff, concurrency, and extension judgment without demanding production architecture.
+State the expected tradeoff, concurrency, failure, and evolution judgment without demanding production architecture.

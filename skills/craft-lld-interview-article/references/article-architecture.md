@@ -37,7 +37,7 @@ Write five to nine numbered requirements. Then list four to eight exclusions.
 
 Requirements must be observable behaviors or invariants. Avoid vague items such as "the system should be scalable."
 
-### 4. Core entities and relationships
+### 4. Candidate entities and pruning
 
 Walk through the candidate nouns. Explicitly reject at least one tempting entity when appropriate.
 
@@ -48,18 +48,18 @@ Use this test:
 - Is it a durable record created by this system?
 - Does it define an actual axis of variation?
 
-Name the orchestrator and provide a two-column responsibility table. Keep the initial set small enough to hold in working memory.
+Classify retained and rejected candidates as classes, immutable records, enums, primitives/identifiers, fields/constants, behavior boundaries, or external concerns. Name the orchestrator and provide a concise responsibility table. Keep the initial set small enough to hold in working memory.
 
 ### 5. Class design
 
-Work top-down from the public entry point. For every central class, answer:
+Work top-down from the public entry point. Give every central class its own subsection. For each one, answer:
 
 1. What must it remember?
 2. What must it do?
 3. Which invariants does it own?
 4. Which details must it not know?
 
-Use requirement-to-state or requirement-to-method tables for the most important classes. Do not repeat them mechanically for trivial value objects.
+Use requirement-to-state and caller-need-to-method mappings for central classes. They may be short when the mapping is obvious. Group trivial value objects, enums, exceptions, and helpers, but do not let an orchestrator-only explanation stand in for the complete class design.
 
 Insert comparative design panels at the decision they affect, not in a detached theory section.
 
@@ -99,7 +99,11 @@ Add likely "what if" questions. For each:
 
 Stay high level unless the extension itself is the article's central lesson.
 
-### 10. Expectations by level
+### 10. Complete artifact bundle
+
+Generate the PDF from the finalized Markdown so both formats have the same body. Add the complete source, test, and required build files as the PDF appendix. Keep Markdown and PDF filenames aligned with the question and explicit candidate level.
+
+### 11. Expectations by level
 
 - Junior: working decomposition, core invariant, and basic edge cases.
 - Mid-level: clean ownership, suitable data structures, and limited prompting.
@@ -130,4 +134,4 @@ Alternate among:
 - diagrams;
 - execution traces.
 
-Avoid long abstract lectures. Introduce principles after the concrete decision that demonstrates them.
+Avoid long abstract lectures. Introduce principles after the concrete decision that demonstrates them. Vary form because the material changes; do not repeat identical rhetorical frames in every section.

@@ -1,12 +1,14 @@
 # Implementation and Verification
 
-Treat runnable code as evidence for the design, not as an unrelated appendix.
+Treat runnable code as evidence for the design. It is organized as a reference project on disk and reproduced completely in the PDF appendix.
 
 ## Separate interview core from reference completeness
 
 In the article, deeply explain two to four methods that expose ownership, state transitions, validation, or algorithm choice. Put the complete implementation in `solution/`, including routine constructors and accessors needed to run it.
 
-Keep a visible boundary:
+Organize the project into a few meaningful packages or modules before writing files. Use dependency direction to choose boundaries: domain values and entities should not depend on orchestration, while optional policies may be injected into the service that uses them.
+
+Keep a visible scope boundary:
 
 - **Implement in interview:** minimum coherent domain model and core flows.
 - **Mention if asked:** a localized alternative or extension with a clear seam.
@@ -23,7 +25,13 @@ Keep a visible boundary:
 - Expose read-only views instead of internal mutable collections.
 - Add interfaces only for demonstrated variation or an external boundary.
 - Avoid frameworks, dependency injection containers, persistence layers, and build systems unless required.
+- Avoid a flat source dump when four or more production types have clear model, service, or policy responsibilities.
+- Avoid artificial packages containing one incidental class; closely related small types may share a package or source file when idiomatic.
 - Do not include TODOs, omitted branches, placeholder returns, or pseudocode in source files.
+
+## PDF appendix
+
+After verification, generate the PDF from the final Markdown and the complete `solution/` tree. Include production code, tests, and required build metadata. The appendix manifest records each relative path and SHA-256 checksum so `validate_article.py` can detect drift.
 
 ## Verification matrix
 

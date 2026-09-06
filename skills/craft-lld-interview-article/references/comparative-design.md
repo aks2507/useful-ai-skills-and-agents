@@ -1,10 +1,10 @@
 # Comparative Design
 
-## Treat comparisons as small proofs
+## Treat comparisons as small proofs, not mandatory headings
 
 A comparison should externalize design judgment. It must show why a locally attractive idea is insufficient and how the chosen refinement addresses that exact failure.
 
-Use this loop:
+Use this loop when the problem contains a consequential choice:
 
 1. **Approach** — describe a design a reasonable candidate could propose.
 2. **Appeal** — explain why it looks simple, fast, or well-encapsulated.
@@ -72,7 +72,7 @@ Use whichever shape matches the decision:
 - Several Great alternatives followed by a chosen default
 - Great conceptually, Good implemented under the interview time box
 
-Do not manufacture a missing tier.
+Do not manufacture a missing tier. An algorithm table, two named options, or a direct counterexample-and-repair can replace Bad/Good/Great headings.
 
 ## Selection rules
 

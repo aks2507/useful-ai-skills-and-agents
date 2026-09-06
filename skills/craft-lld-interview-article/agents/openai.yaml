@@ -1,4 +1,4 @@
 interface:
   display_name: "Craft LLD Interview Article"
-  short_description: "Build interview-sized LLD articles with code"
-  default_prompt: "Use $craft-lld-interview-article to turn this LLD prompt into a narrative interview article with diagrams and runnable code."
+  short_description: "Build complete LLD article and code bundles"
+  default_prompt: "Use $craft-lld-interview-article to turn this LLD prompt into a named Markdown and self-contained PDF article with UML diagrams, per-class derivation, organized runnable code, and verification."

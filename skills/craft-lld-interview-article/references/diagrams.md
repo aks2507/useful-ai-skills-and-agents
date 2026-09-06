@@ -1,10 +1,10 @@
 # Diagram Guidance
 
-Use diagrams to compress relationships or transitions that would otherwise require several paragraphs. Prefer UML-lite Mermaid: accurate enough to teach, small enough to scan during interview preparation.
+Use diagrams to compress relationships or transitions that would otherwise require several paragraphs. Prefer UML-lite Mermaid in Markdown: accurate enough to teach, small enough to scan during interview preparation, and suitable for vector rendering in the paired PDF.
 
 ## Global rules
 
-- Draw the selected design, not every alternative. A tiny diagram inside a comparison is acceptable when it exposes the flaw.
+- Include one class diagram for a non-trivial multi-class design. Draw the selected design, not every alternative. A tiny diagram inside a comparison is acceptable when it exposes the flaw.
 - Use the exact class, method, and state names from the article and code.
 - Keep a primary diagram near seven nodes or fewer. Split independent concerns instead of producing a wall of boxes.
 - Show only members that matter to the current design argument.
@@ -102,6 +102,7 @@ Before publishing, verify:
 2. Names match the final design and implementation.
 3. Arrows express the intended ownership or call direction.
 4. The prose states what the reader should notice.
-5. Removing the diagram would make the explanation materially harder; otherwise remove it.
+5. The class diagram covers central ownership and collaboration without becoming a member dump.
+6. Any additional state, sequence, race, or data-structure diagram would make the explanation materially harder if removed; otherwise remove it.
 
-Render diagrams with a Mermaid-capable tool when one is available. If no renderer is installed, inspect the syntax manually and state that the diagrams were not mechanically rendered; do not fold that limitation into a generic “validation passed” claim.
+Render diagrams in both output formats. `scripts/build_pdf.py` supports compact class, state, and sequence diagrams. If a required construct falls back to source text in the PDF, either simplify the diagram to supported UML-lite syntax or use a renderer that can embed it. Do not claim visual validation from syntax inspection alone.

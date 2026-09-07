@@ -1,4 +1,4 @@
 interface:
   display_name: "Tailor Tech Job Application"
-  short_description: "Research and tailor a complete tech application"
-  default_prompt: "Use $tailor-tech-job-application to research this company and tailor my recruiter email, LinkedIn note, cover letter, and one-page resume PDF to the job description."
+  short_description: "Tailor tech applications and preserve LaTeX format"
+  default_prompt: "Use $tailor-tech-job-application to process each supplied tech job description separately, research named companies, and tailor the appropriate application materials plus a one-page LaTeX resume while preserving its format."

@@ -1,6 +1,6 @@
 # Company research and context dossier
 
-Read this file for every application.
+Read this file for named-company mode. If the listing does not disclose the employer, skip company research and continue in anonymous-company mode. Do not try to identify the company from weak clues or copied job text.
 
 ## Research standard
 
@@ -29,6 +29,7 @@ Answer the questions that affect the application:
 - Which customer, scale, reliability, security, cost, adoption, regulatory, or operational problems is it addressing?
 - What does the job description suggest this team must deliver now?
 - Which parts of the candidate's background can plausibly help?
+- Which company or role signals could support substantive questions about the work, current challenges, and problem-solving approach?
 - What remains unknown?
 
 For a private company, do not guess financial performance, headcount, funding, or market share. For a public company, use current filings for material financial or strategic claims.
@@ -57,6 +58,8 @@ Job description: <direct URL or "provided by user">
 ## Role and team implications
 
 ## Candidate contribution opportunities
+
+## Interview question signals
 
 ## Unknowns and cautions
 

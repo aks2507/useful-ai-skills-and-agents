@@ -4,13 +4,13 @@ Read this file before drafting the recruiter email, LinkedIn connection note, or
 
 ## Shared narrative
 
-All public-facing writing should answer three questions:
+In named-company mode, public-facing writing should answer three questions:
 
 1. Why does this company's work matter to the candidate?
 2. What role outcome can the candidate help create?
 3. Which verified experience makes that contribution credible?
 
-Use `company-context.md`, `job-analysis.md`, and `candidate-evidence.md` as the only factual inputs. Give each artifact a different job:
+Use `company-context.md`, `job-analysis.md`, and `candidate-evidence.md` as the only factual inputs in named-company mode. In anonymous-company mode, use only `job-analysis.md` and `candidate-evidence.md`. Give each artifact a different job:
 
 - The email earns a reply.
 - The connection note earns permission to continue the conversation.
@@ -87,13 +87,17 @@ Use a smaller portion of the letter to explain why this role is a logical next s
 
 Keep this section employer-aware: the growth sought should improve the candidate's ability to contribute.
 
+### Anonymous-company mode
+
+When the listing does not identify the employer, use a neutral greeting and build the letter from `job-analysis.md` and `candidate-evidence.md`. Focus on the role's technical problems, expected outcomes, and the candidate's supported contribution. Omit company mission, product praise, culture claims, long-term growth inside the company, and any implication that the candidate researched an unidentified employer.
+
 ### Close
 
 Reinforce the contribution thesis, invite a conversation, and end directly. Avoid pleading, vague hope, or repeated enthusiasm.
 
 ## Quality test
 
-After drafting, remove any sentence that could be sent unchanged to five different companies. Every remaining company-specific sentence must be traceable to `company-context.md`, and every candidate claim must be traceable to `candidate-evidence.md`.
+After drafting, remove generic filler. In named-company mode, every company-specific sentence must be traceable to `company-context.md`. In either mode, every candidate claim must be traceable to `candidate-evidence.md`. An anonymous-company cover letter may use role-specific language from `job-analysis.md` without pretending to know the employer.
 
 ## Basis for the structure
 

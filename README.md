@@ -22,16 +22,19 @@ The skill is designed around a typical one-hour interview. It favors the smalles
 
 ### `tailor-tech-job-application`
 
-Builds a research-backed application package for a specific tech role with:
+Builds a tailored application package for one or more tech roles with:
 
-- a cited company context dossier saved before drafting;
+- a cited company context dossier saved before drafting when the employer is named;
 - a prioritized job analysis and candidate evidence ledger;
-- a concise recruiter email and LinkedIn connection note;
+- a concise recruiter email and LinkedIn connection note for named employers;
 - a contribution-first cover letter;
-- a truthful, ATS-readable, one-page tailored resume PDF;
-- validation for length, sources, PDF page count, and common AI-writing tells.
+- 5-6 research-grounded questions for the interviewer when company research is available;
+- a truthful one-page tailored resume that preserves the supplied LaTeX format and structure;
+- validation for length, sources, LaTeX structure, PDF page count, and common AI-writing tells.
 
 The skill uses current first-party and trustworthy independent sources, excludes anonymous employee reviews and social-media rumors, and prevents unsupported keywords or accomplishments from entering the application.
+
+Each job description is processed in a separate workspace. If a listing does not disclose the employer, the skill continues with a role-focused cover letter and resume instead of inventing company context.
 
 ## Install locally
 
@@ -46,7 +49,8 @@ Restart or reload Codex if needed, then invoke it by name:
 
 ```text
 Use $craft-lld-interview-article to turn "Design a parking lot" into an article with a runnable Java solution.
-Use $tailor-tech-job-application to research this company and tailor my application to the attached tech job description and resume PDF.
+Use $tailor-tech-job-application to research this company and tailor my application to the attached tech job description and LaTeX resume project.
+Use $tailor-tech-job-application to process these three job descriptions separately against the same LaTeX resume project.
 ```
 
 ## Repository layout

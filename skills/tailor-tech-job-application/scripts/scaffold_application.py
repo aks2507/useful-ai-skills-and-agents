@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Create a safe workspace for one tailored tech job application."""
+"""Create a safe workspace for one named or anonymous tech application."""
 
 from __future__ import annotations
 
@@ -40,6 +40,10 @@ Job description: <!-- Complete this section -->
 <!-- Complete this section -->
 
 ## Candidate contribution opportunities
+
+<!-- Complete this section -->
+
+## Interview question signals
 
 <!-- Complete this section -->
 
@@ -108,6 +112,17 @@ Job description: <!-- Complete this section -->
 
 <!-- Complete this section -->
 """,
+    "interviewer-questions.md": """# Interviewer Questions
+
+## Questions to ask
+
+<!-- Complete this section with 5-6 numbered questions -->
+
+## Research grounding
+
+| Question | Company or role signal | Source |
+| --- | --- | --- |
+""",
     "resume-change-log.md": """# Resume Change Log
 
 ## Material changes
@@ -127,11 +142,18 @@ Job description: <!-- Complete this section -->
 
 <!-- Complete this section -->
 
-## Formatting and reconstruction notes
+## Format preservation and compilation notes
 
 <!-- Complete this section -->
 """,
 }
+
+ANONYMOUS_TEMPLATE_NAMES = (
+    "job-analysis.md",
+    "candidate-evidence.md",
+    "cover-letter.md",
+    "resume-change-log.md",
+)
 
 
 def slugify(value: str) -> str:
@@ -141,8 +163,13 @@ def slugify(value: str) -> str:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--company", required=True)
+    parser.add_argument("--company")
     parser.add_argument("--role", required=True)
+    parser.add_argument(
+        "--anonymous-company",
+        action="store_true",
+        help="Create the reduced cover-letter and resume workspace for an undisclosed employer.",
+    )
     parser.add_argument(
         "--output",
         type=Path,
@@ -153,20 +180,34 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> int:
     args = parse_args()
-    output = args.output or Path(f"{slugify(args.company)}-{slugify(args.role)}")
+    if args.anonymous_company and args.company:
+        raise SystemExit("Use either --company or --anonymous-company, not both.")
+    if not args.anonymous_company and not args.company:
+        raise SystemExit("Provide --company or select --anonymous-company.")
+
+    company = args.company or "Undisclosed Company"
+    output = args.output or Path(f"{slugify(company)}-{slugify(args.role)}")
     output.mkdir(parents=True, exist_ok=True)
-    (output / "resume-source").mkdir(exist_ok=True)
+    source_dir = output / "resume-source"
+    source_dir.mkdir(exist_ok=True)
+    (source_dir / "original").mkdir(exist_ok=True)
+    (source_dir / "tailored").mkdir(exist_ok=True)
 
     created = 0
     skipped = 0
-    for relative_path, template in TEMPLATES.items():
+    selected_templates = (
+        {name: TEMPLATES[name] for name in ANONYMOUS_TEMPLATE_NAMES}
+        if args.anonymous_company
+        else TEMPLATES
+    )
+    for relative_path, template in selected_templates.items():
         target = output / relative_path
         if target.exists():
             print(f"SKIP existing file: {target}")
             skipped += 1
             continue
         target.write_text(
-            template.format(company=args.company, role=args.role),
+            template.format(company=company, role=args.role),
             encoding="utf-8",
         )
         print(f"CREATE: {target}")

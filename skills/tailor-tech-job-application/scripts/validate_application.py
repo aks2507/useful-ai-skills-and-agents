@@ -22,8 +22,24 @@ REQUIRED_FILES = (
     "recruiter-email.md",
     "linkedin-connection.md",
     "cover-letter.md",
+    "interviewer-questions.md",
     "resume-change-log.md",
     "tailored-resume.pdf",
+)
+
+ANONYMOUS_REQUIRED_FILES = (
+    "job-analysis.md",
+    "candidate-evidence.md",
+    "cover-letter.md",
+    "resume-change-log.md",
+    "tailored-resume.pdf",
+)
+
+ANONYMOUS_FORBIDDEN_FILES = (
+    "company-context.md",
+    "recruiter-email.md",
+    "linkedin-connection.md",
+    "interviewer-questions.md",
 )
 
 REQUIRED_HEADINGS = {
@@ -35,6 +51,7 @@ REQUIRED_HEADINGS = {
         "problems the company is addressing",
         "role and team implications",
         "candidate contribution opportunities",
+        "interview question signals",
         "unknowns and cautions",
         "sources",
     ),
@@ -57,7 +74,11 @@ REQUIRED_HEADINGS = {
         "keywords used",
         "unsupported keywords omitted",
         "content removed for space",
-        "formatting and reconstruction notes",
+        "format preservation and compilation notes",
+    ),
+    "interviewer-questions.md": (
+        "questions to ask",
+        "research grounding",
     ),
 }
 
@@ -65,6 +86,7 @@ PUBLIC_TEXT_FILES = (
     "recruiter-email.md",
     "linkedin-connection.md",
     "cover-letter.md",
+    "interviewer-questions.md",
 )
 
 PLACEHOLDER_PATTERNS = (
@@ -91,6 +113,16 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("application_dir", type=Path)
     parser.add_argument("--linkedin-limit", type=int, default=200)
+    parser.add_argument(
+        "--allow-format-change",
+        action="store_true",
+        help="Skip LaTeX structure checks after an explicit user-approved redesign.",
+    )
+    parser.add_argument(
+        "--anonymous-company",
+        action="store_true",
+        help="Validate the reduced package used when the employer is undisclosed.",
+    )
     return parser.parse_args()
 
 
@@ -122,6 +154,58 @@ def headings(text: str) -> list[str]:
         re.sub(r"\s+", " ", match.group(1).strip().lower())
         for match in re.finditer(r"^#{1,6}\s+(.+?)\s*$", text, re.MULTILINE)
     ]
+
+
+def numbered_questions(text: str) -> list[str]:
+    return [
+        match.group(1).strip()
+        for match in re.finditer(r"^\s*\d+[.)]\s+(.+?)\s*$", text, re.MULTILINE)
+    ]
+
+
+def grounding_rows(text: str) -> list[list[str]]:
+    rows: list[list[str]] = []
+    for line in text.splitlines():
+        if not line.lstrip().startswith("|"):
+            continue
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 3:
+            continue
+        if cells[0].lower() == "question" or all(
+            re.fullmatch(r":?-{3,}:?", cell) for cell in cells
+        ):
+            continue
+        if re.fullmatch(r"\d+", cells[0]):
+            rows.append(cells)
+    return rows
+
+
+def strip_latex_comments(text: str) -> str:
+    return "\n".join(re.sub(r"(?<!\\)%.*$", "", line) for line in text.splitlines())
+
+
+def latex_structure_signature(text: str) -> list[str]:
+    cleaned = strip_latex_comments(text)
+    pattern = re.compile(
+        r"\\(?:begin|end)\s*\{[^{}]+\}"
+        r"|\\(?:section|subsection|subsubsection)\*?\b"
+        r"|\\item\b"
+        r"|\\resume[A-Za-z@]+"
+    )
+    return [re.sub(r"\s+", "", token) for token in pattern.findall(cleaned)]
+
+
+def latex_format_signature(text: str) -> list[str]:
+    command = re.compile(
+        r"^\s*\\(?:documentclass|usepackage|RequirePackage|geometry|hypersetup|"
+        r"pagestyle|thispagestyle|setlength|addtolength|titleformat|titlespacing|"
+        r"newcommand|renewcommand|providecommand|fontfamily|fontsize|linespread)\b"
+    )
+    signature: list[str] = []
+    for line in strip_latex_comments(text).splitlines():
+        if command.match(line):
+            signature.append(re.sub(r"\s+", "", line))
+    return signature
 
 
 def check_style(label: str, text: str) -> tuple[list[str], list[str]]:
@@ -216,17 +300,30 @@ def extract_pdf_text(path: Path) -> tuple[str | None, str]:
     return None, "; ".join(failures)
 
 
-def validate(application_dir: Path, linkedin_limit: int) -> tuple[list[str], list[str]]:
+def validate(
+    application_dir: Path,
+    linkedin_limit: int,
+    allow_format_change: bool = False,
+    anonymous_company: bool = False,
+) -> tuple[list[str], list[str]]:
     errors: list[str] = []
     warnings: list[str] = []
 
     if not application_dir.is_dir():
         return [f"Application directory does not exist: {application_dir}"], warnings
 
-    paths = {name: application_dir / name for name in REQUIRED_FILES}
+    required_files = ANONYMOUS_REQUIRED_FILES if anonymous_company else REQUIRED_FILES
+    paths = {name: application_dir / name for name in required_files}
     for name, path in paths.items():
         if not path.is_file():
             errors.append(f"Missing required file: {name}")
+
+    if anonymous_company:
+        for name in ANONYMOUS_FORBIDDEN_FILES:
+            if (application_dir / name).exists():
+                errors.append(
+                    f"{name}: omit this file when the employer is undisclosed"
+                )
 
     text_files: dict[str, str] = {}
     for name, path in paths.items():
@@ -279,6 +376,31 @@ def validate(application_dir: Path, linkedin_limit: int) -> tuple[list[str], lis
         elif count < 250 or count > 500:
             warnings.append(f"cover-letter.md: {count} words; the usual target is 250 to 500")
 
+    questions_text = text_files.get("interviewer-questions.md", "")
+    if questions_text:
+        questions = numbered_questions(questions_text)
+        if len(questions) < 5 or len(questions) > 6:
+            errors.append(
+                "interviewer-questions.md: expected 5-6 numbered questions, "
+                f"found {len(questions)}"
+            )
+        for index, question in enumerate(questions, start=1):
+            if not question.endswith("?"):
+                errors.append(
+                    f"interviewer-questions.md: question {index} must end with a question mark"
+                )
+
+        grounded = grounding_rows(questions_text)
+        if len(grounded) < 4:
+            errors.append(
+                "interviewer-questions.md: ground at least four questions in company or role research"
+            )
+        for row in grounded:
+            if not row[1] or not row[2]:
+                errors.append(
+                    "interviewer-questions.md: every research-grounding row needs a signal and source"
+                )
+
     for name in PUBLIC_TEXT_FILES:
         text = text_files.get(name)
         if text:
@@ -308,15 +430,157 @@ def validate(application_dir: Path, linkedin_limit: int) -> tuple[list[str], lis
                 warnings.extend(style_warnings)
 
     source_dir = application_dir / "resume-source"
-    if not source_dir.is_dir() or not any(item.is_file() for item in source_dir.rglob("*")):
-        errors.append("resume-source/: include the editable resume source")
+    original_dir = source_dir / "original"
+    tailored_dir = source_dir / "tailored"
+
+    if not original_dir.is_dir():
+        errors.append("resume-source/original/: include the unchanged supplied LaTeX project")
+    if not tailored_dir.is_dir():
+        errors.append("resume-source/tailored/: include the content-edited LaTeX project")
+
+    original_tex = (
+        {path.relative_to(original_dir): path for path in original_dir.rglob("*.tex")}
+        if original_dir.is_dir()
+        else {}
+    )
+    tailored_tex = (
+        {path.relative_to(tailored_dir): path for path in tailored_dir.rglob("*.tex")}
+        if tailored_dir.is_dir()
+        else {}
+    )
+
+    if not original_tex:
+        errors.append("resume-source/original/: include at least one .tex file")
+    if not tailored_tex:
+        errors.append("resume-source/tailored/: include at least one .tex file")
+
+    if original_tex and tailored_tex:
+        original_paths = set(original_tex)
+        tailored_paths = set(tailored_tex)
+        if original_paths != tailored_paths:
+            missing = sorted(str(path) for path in original_paths - tailored_paths)
+            added = sorted(str(path) for path in tailored_paths - original_paths)
+            if missing:
+                errors.append(
+                    "resume-source/tailored/: missing LaTeX files present in original: "
+                    + ", ".join(missing)
+                )
+            if added:
+                errors.append(
+                    "resume-source/tailored/: added LaTeX files absent from original: "
+                    + ", ".join(added)
+                )
+
+        if not allow_format_change:
+            for relative_path in sorted(original_paths & tailored_paths):
+                original_text = read_text(original_tex[relative_path])
+                tailored_text = read_text(tailored_tex[relative_path])
+                if latex_structure_signature(original_text) != latex_structure_signature(
+                    tailored_text
+                ):
+                    errors.append(
+                        f"resume-source/{relative_path}: LaTeX structure changed; "
+                        "restore it or rerun with --allow-format-change after user approval"
+                    )
+                if latex_format_signature(original_text) != latex_format_signature(
+                    tailored_text
+                ):
+                    errors.append(
+                        f"resume-source/{relative_path}: LaTeX formatting commands changed; "
+                        "restore them or rerun with --allow-format-change after user approval"
+                    )
+
+    support_suffixes = {
+        ".cls",
+        ".sty",
+        ".bst",
+        ".bbx",
+        ".cbx",
+        ".bib",
+        ".otf",
+        ".ttf",
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".svg",
+    }
+    original_support = (
+        {
+            path.relative_to(original_dir): path
+            for path in original_dir.rglob("*")
+            if path.is_file() and path.suffix.lower() in support_suffixes
+        }
+        if original_dir.is_dir()
+        else {}
+    )
+    tailored_support = (
+        {
+            path.relative_to(tailored_dir): path
+            for path in tailored_dir.rglob("*")
+            if path.is_file() and path.suffix.lower() in support_suffixes
+        }
+        if tailored_dir.is_dir()
+        else {}
+    )
+    if original_support or tailored_support:
+        original_paths = set(original_support)
+        tailored_paths = set(tailored_support)
+        if original_paths != tailored_paths:
+            errors.append(
+                "resume-source/: original and tailored LaTeX support-file layouts differ"
+            )
+        elif not allow_format_change:
+            for relative_path in sorted(original_paths):
+                if (
+                    original_support[relative_path].read_bytes()
+                    != tailored_support[relative_path].read_bytes()
+                ):
+                    errors.append(
+                        f"resume-source/{relative_path}: LaTeX support file changed; "
+                        "restore it or rerun with --allow-format-change after user approval"
+                    )
+
+    for label, directory in (
+        ("resume-source/original/", original_dir),
+        ("resume-source/tailored/", tailored_dir),
+    ):
+        if not directory.is_dir():
+            continue
+        compiled_pdfs = sorted(directory.glob("*.pdf"))
+        if not compiled_pdfs:
+            compiled_pdfs = sorted(directory.rglob("*.pdf"))
+        if not compiled_pdfs:
+            errors.append(f"{label}: include a compiled resume PDF")
+            continue
+
+        one_page_found = False
+        page_results: list[str] = []
+        for compiled_pdf in compiled_pdfs:
+            pages, method = pdf_page_count(compiled_pdf)
+            relative_pdf = compiled_pdf.relative_to(directory)
+            if pages == 1:
+                one_page_found = True
+            if pages is None:
+                page_results.append(f"{relative_pdf} unverified via {method}")
+            else:
+                page_results.append(f"{relative_pdf} has {pages} page(s) via {method}")
+        if not one_page_found:
+            errors.append(
+                f"{label}: no one-page compiled resume PDF found; "
+                + "; ".join(page_results)
+            )
 
     return errors, warnings
 
 
 def main() -> int:
     args = parse_args()
-    errors, warnings = validate(args.application_dir, args.linkedin_limit)
+    errors, warnings = validate(
+        args.application_dir,
+        args.linkedin_limit,
+        allow_format_change=args.allow_format_change,
+        anonymous_company=args.anonymous_company,
+    )
 
     for warning in warnings:
         print(f"WARNING: {warning}")

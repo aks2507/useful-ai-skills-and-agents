@@ -1,11 +1,33 @@
 ---
 name: tailor-tech-job-application
-description: Tailor truthful application materials and a one-page LaTeX resume for one or more tech job descriptions while preserving the supplied resume format. When a company is named, research it and create outreach, a cover letter, and interviewer questions; when it is undisclosed, create a role-focused cover letter and tailored resume. Do not use for non-tech roles, bulk outreach, or inventing qualifications.
+description: Create, continue, revise, or validate truthful application materials and a one-page LaTeX resume for one or more tech job descriptions while preserving the supplied resume format. When a company is named, research it and create outreach, a cover letter, and interviewer questions; when it is undisclosed, create a role-focused cover letter and tailored resume. Do not use for non-tech roles, bulk outreach, or inventing qualifications.
 ---
 
 # Tailor Tech Job Application
 
 Build one coherent application narrative from current company research when available, the job description, and the candidate's verified experience. Produce the full application package or the subset the user requests.
+
+## Mandatory freshness gate
+
+At the beginning of every invocation and every follow-up that continues application work, before relying on prior chat context or existing artifacts, locate this skill's directory from the loaded `SKILL.md` path and run:
+
+```bash
+python3 scripts/check_skill_freshness.py
+```
+
+State the reported version and short digest in a concise progress update. The current on-disk `SKILL.md`, references, and scripts supersede every older copy, paraphrase, plan, or summary of this skill in the chat. Current user instructions retain their normal priority.
+
+If the checker reports a partial manifest or a duplicate skill copy, do not continue the application workflow. Resolve the installation so there is one canonical current copy. Never choose between same-name copies by guesswork.
+
+When resuming an existing application directory, also run:
+
+```bash
+python3 scripts/check_skill_freshness.py --state-file path/to/application/skill-state.json
+```
+
+If the application state is missing or stale, read `references/version-history.md`, reread every current reference required for the requested work, and audit the existing artifacts against the current instructions. Rebuild or revise anything that no longer complies and run the current application validator. When the missing or stale state is the only remaining validation error, record the current state with `--record-state`, then rerun validation. Do not record a new state merely to silence other failures.
+
+For a new application, `scripts/scaffold_application.py` records `skill-state.json` automatically. A running turn cannot be retroactively changed, so if the skill changes during an active turn, finish no deliverable from the old instructions. Rerun the freshness gate and restart that workflow step using the new version.
 
 ## Scope gate
 
@@ -45,6 +67,7 @@ Do not let an anonymous listing block other descriptions in the same request.
 
 Before working:
 
+- Complete the mandatory freshness gate. Read `references/version-history.md` only for a missing or stale application state.
 - In named-company mode, read `references/company-research.md` for source selection and the required company context dossier.
 - Read `references/application-writing.md` before drafting public-facing prose.
 - In named-company mode, read `references/interviewer-questions.md` before drafting questions for the interviewer.
@@ -110,11 +133,17 @@ In anonymous-company mode, create only `cover-letter.md` and the tailored resume
 
 ### 6. Tailor the resume
 
-Copy the supplied LaTeX project into `resume-source/original/` unchanged and make the tailored copy in `resume-source/tailored/` with the same relative file structure. Preserve the template, preamble, macros, section order, columns, typography, colors, spacing, and number and order of entries and bullets. Change content only unless the user explicitly asks for structural or formatting changes.
+The supplied resume is layout-locked by default. Copy the LaTeX project into `resume-source/original/` unchanged and make the tailored copy in `resume-source/tailored/` with the same relative file structure. Preserve the template, preamble, macros, section order, columns, typography, colors, spacing, and number and order of entries and bullets. Change only wording inside existing content slots.
+
+Do not infer permission to change format or structure from a request to tailor, improve, optimize, fit one page, improve ATS compatibility, or fix an overflow. Permission exists only when the user explicitly requests a format or structure change for this resume in the current task. Earlier approval for another resume, role, task, or user does not carry over.
 
 Preserve the candidate's employment history, dates, titles, education, metrics, project facts, and core achievements. Tailor summary text, skill emphasis, and bullet wording only when supported by the evidence ledger. If the edited text overflows, shorten or undo lower-priority wording before considering any layout change.
 
 Compile the tailored LaTeX project with its existing engine and build process to create `tailored-resume.pdf`. Confirm it is exactly one page, render it to an image, compare it with the original, and inspect it for clipping, overlap, awkward wrapping, spacing regressions, and visual imbalance. Save `resume-change-log.md` with each material content edit and explicit confirmation that format and structure were preserved.
+
+Before delivery, the application validator must pass in its default locked mode. Do not use `--allow-format-change` to get around a failure. Restore the layout-changing edit and shorten or undo content changes instead. Do not claim that the resume is complete or layout-preserved when the locked validation or visual comparison has not passed.
+
+If the current user explicitly requests a format or structure change, create `format-change-approval.md` inside that role's application directory. Quote the user's exact instruction on a `User request:` line and list only the authorized changes under `## Approved changes`. Then, and only then, the validator may be run with both `--allow-format-change` and `--format-change-approval path/to/format-change-approval.md`. Never create this approval record merely because locked validation failed.
 
 Follow `references/resume-tailoring.md` for the truth-preserving and PDF checks.
 
@@ -146,7 +175,9 @@ For an undisclosed employer, run:
 python3 scripts/validate_application.py path/to/application-directory --anonymous-company
 ```
 
-Fix all errors. Review warnings manually rather than rewriting good prose merely to silence a heuristic.
+Fix all errors. A successful exit in the default mode is mandatory for a content-only resume. Review warnings manually rather than rewriting good prose merely to silence a heuristic.
+
+Immediately before delivery, rerun the freshness checker with the application state file. If its version or digest differs from the value reported at the start of the turn, the skill changed during the run. Reconcile against the new version and repeat affected validation before delivering anything.
 
 ## Output contract
 
@@ -154,6 +185,7 @@ Use this layout for named-company mode:
 
 ```text
 <company>-<role>/
+|-- skill-state.json
 |-- company-context.md
 |-- job-analysis.md
 |-- candidate-evidence.md
@@ -170,10 +202,12 @@ Use this layout for named-company mode:
 
 The company context, job analysis, and evidence ledger are part of the deliverable. They make the public artifacts auditable and reusable in later application steps.
 
-For anonymous-company mode, omit `company-context.md`, `recruiter-email.md`, `linkedin-connection.md`, and `interviewer-questions.md`. Keep `job-analysis.md` and `candidate-evidence.md` as working evidence alongside the cover letter and resume files.
+For anonymous-company mode, omit `company-context.md`, `recruiter-email.md`, `linkedin-connection.md`, and `interviewer-questions.md`. Keep `skill-state.json`, `job-analysis.md`, and `candidate-evidence.md` as working evidence alongside the cover letter and resume files.
 
 ## Non-negotiable constraints
 
+- Run the freshness gate on every invocation and treat the current on-disk skill version as authoritative over stale chat context.
+- Never validate or deliver an application whose `skill-state.json` is missing or stale.
 - Research each named company before drafting and save that research.
 - If the company is undisclosed, continue in anonymous-company mode without company research or invented context.
 - Process multiple job descriptions separately from the same unchanged LaTeX baseline.
@@ -184,7 +218,9 @@ For anonymous-company mode, omit `company-context.md`, `recruiter-email.md`, `li
 - Keep the recruiter email at or below 200 words.
 - In named-company mode, provide exactly 5-6 interviewer questions, predominantly grounded in company research.
 - Preserve the supplied LaTeX resume format and structure. Change either only when the user explicitly requests it.
+- Treat resume layout preservation as a per-task lock. Never reuse or infer format-change approval.
 - Keep the tailored resume PDF to exactly one page.
 - Compile, render, and visually inspect the tailored resume before delivery. Resolve overflow through content editing first.
+- Do not deliver a content-only tailored resume unless the default locked validator passes.
 - Avoid em dashes, false contrasts such as `not X but Y`, generic praise, and formulaic AI-sounding phrasing in every public-facing artifact.
 - Optimize the package for a human technical reader and ordinary ATS parsing, not a speculative ATS score.

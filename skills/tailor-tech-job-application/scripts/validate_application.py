@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Validate a tailored tech job application package.
 
-The checks are structural and heuristic. Human review still decides whether the
-research is sufficient and whether the writing sounds natural.
+Resume layout validation is fail-closed. A format-change override is accepted
+only with an application-local record of the user's explicit authorization.
+Human review still decides whether the research is sufficient and whether the
+writing sounds natural.
 """
 
 from __future__ import annotations
@@ -13,6 +15,8 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+
+from check_skill_freshness import application_freshness_errors
 
 
 REQUIRED_FILES = (
@@ -108,6 +112,26 @@ GENERIC_PHRASES = (
     "delve",
 )
 
+GENERATED_LATEX_ENDINGS = (
+    ".aux",
+    ".bbl",
+    ".bcf",
+    ".blg",
+    ".fdb_latexmk",
+    ".fls",
+    ".lof",
+    ".log",
+    ".lot",
+    ".out",
+    ".pdf",
+    ".run.xml",
+    ".synctex.gz",
+    ".toc",
+    ".xdv",
+)
+
+IGNORED_PROJECT_FILES = {".DS_Store"}
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
@@ -116,7 +140,18 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--allow-format-change",
         action="store_true",
-        help="Skip LaTeX structure checks after an explicit user-approved redesign.",
+        help=(
+            "Permit an explicitly requested resume redesign. Requires "
+            "--format-change-approval and must never be used to fix ordinary overflow."
+        ),
+    )
+    parser.add_argument(
+        "--format-change-approval",
+        type=Path,
+        help=(
+            "Application-local Markdown file quoting the user's explicit request and "
+            "listing the approved layout changes. Required with --allow-format-change."
+        ),
     )
     parser.add_argument(
         "--anonymous-company",
@@ -184,6 +219,15 @@ def strip_latex_comments(text: str) -> str:
     return "\n".join(re.sub(r"(?<!\\)%.*$", "", line) for line in text.splitlines())
 
 
+def latex_preamble_signature(text: str) -> str:
+    """Return the exact preamble, including TeX magic comments and macro bodies."""
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    marker = re.search(r"\\begin\s*\{document\}", normalized)
+    if marker is None:
+        return normalized.rstrip()
+    return normalized[: marker.end()].rstrip()
+
+
 def latex_structure_signature(text: str) -> list[str]:
     cleaned = strip_latex_comments(text)
     pattern = re.compile(
@@ -193,6 +237,36 @@ def latex_structure_signature(text: str) -> list[str]:
         r"|\\resume[A-Za-z@]+"
     )
     return [re.sub(r"\s+", "", token) for token in pattern.findall(cleaned)]
+
+
+def latex_section_signature(text: str) -> list[str]:
+    cleaned = strip_latex_comments(text)
+    pattern = re.compile(
+        r"\\(?:section|subsection|subsubsection)\*?\s*\{([^{}]*)\}"
+    )
+    return [re.sub(r"\s+", " ", title).strip() for title in pattern.findall(cleaned)]
+
+
+def latex_layout_signature(text: str) -> list[str]:
+    """Capture layout commands that can appear after ``\\begin{document}``."""
+    cleaned = strip_latex_comments(text)
+    marker = re.search(r"\\begin\s*\{document\}", cleaned)
+    body = cleaned[marker.end() :] if marker else cleaned
+    pattern = re.compile(
+        r"\\begin\s*\{(?:minipage|multicols|multicols\*|tabular|tabularx|"
+        r"longtable|tikzpicture|itemize|enumerate|description)\}"
+        r"(?:\s*\[[^\]]*\])?(?:\s*\{[^{}]*\})?"
+        r"|\\(?:vspace|hspace)\*?\s*\{[^{}]*\}"
+        r"|\\(?:vskip|hskip|kern)\s*[^\s{}]+"
+        r"|\\rule\s*\{[^{}]*\}\s*\{[^{}]*\}"
+        r"|\\(?:columnbreak|newpage|clearpage|pagebreak|nopagebreak|linebreak|"
+        r"raggedright|raggedleft|centering|noindent|small|footnotesize|scriptsize|"
+        r"tiny|large|Large|LARGE|huge|Huge)\b"
+        r"|\\(?:setlength|addtolength)\s*\{[^{}]*\}\s*\{[^{}]*\}"
+        r"|\\fontsize\s*\{[^{}]*\}\s*\{[^{}]*\}"
+        r"|\\(?:color|pagecolor)\s*\{[^{}]*\}"
+    )
+    return [re.sub(r"\s+", "", token) for token in pattern.findall(body)]
 
 
 def latex_format_signature(text: str) -> list[str]:
@@ -206,6 +280,76 @@ def latex_format_signature(text: str) -> list[str]:
         if command.match(line):
             signature.append(re.sub(r"\s+", "", line))
     return signature
+
+
+def is_generated_latex_file(path: Path) -> bool:
+    return path.name in IGNORED_PROJECT_FILES or any(
+        path.name.endswith(ending) for ending in GENERATED_LATEX_ENDINGS
+    )
+
+
+def project_ancillary_files(root: Path) -> dict[Path, Path]:
+    """Return user-supplied non-TeX project files, excluding compiler output."""
+    return {
+        path.relative_to(root): path
+        for path in root.rglob("*")
+        if path.is_file()
+        and path.suffix.lower() != ".tex"
+        and not is_generated_latex_file(path)
+    }
+
+
+def validate_format_change_approval(
+    application_dir: Path, approval_file: Path | None
+) -> list[str]:
+    label = "format-change approval"
+    if approval_file is None:
+        return [
+            f"{label}: --allow-format-change requires --format-change-approval; "
+            "do not bypass the resume layout lock without an explicit user request"
+        ]
+
+    resolved_application = application_dir.resolve()
+    resolved_approval = approval_file.resolve()
+    try:
+        resolved_approval.relative_to(resolved_application)
+    except ValueError:
+        return [f"{label}: approval file must be stored inside the application directory"]
+
+    if not resolved_approval.is_file():
+        return [f"{label}: file does not exist: {approval_file}"]
+
+    text = read_text(resolved_approval)
+    errors: list[str] = []
+    if not re.search(
+        r"^#\s+User-authorized resume (?:format|structure) change\s*$",
+        text,
+        re.IGNORECASE | re.MULTILINE,
+    ):
+        errors.append(
+            f"{label}: add the heading '# User-authorized resume format change'"
+        )
+
+    request = re.search(r"^User request:\s*(.+?)\s*$", text, re.MULTILINE)
+    if request is None or len(request.group(1).strip()) < 12:
+        errors.append(
+            f"{label}: include 'User request:' followed by the user's exact instruction"
+        )
+    elif any(
+        re.search(pattern, request.group(1), re.IGNORECASE)
+        for pattern in PLACEHOLDER_PATTERNS
+    ):
+        errors.append(f"{label}: user request contains placeholder text")
+
+    scope = re.search(
+        r"^##\s+Approved changes\s*$([\s\S]*?)(?=^##\s+|\Z)",
+        text,
+        re.IGNORECASE | re.MULTILINE,
+    )
+    if scope is None or not re.search(r"^\s*[-*]\s+\S", scope.group(1), re.MULTILINE):
+        errors.append(f"{label}: list the specific approved changes under '## Approved changes'")
+
+    return errors
 
 
 def check_style(label: str, text: str) -> tuple[list[str], list[str]]:
@@ -304,6 +448,7 @@ def validate(
     application_dir: Path,
     linkedin_limit: int,
     allow_format_change: bool = False,
+    format_change_approval: Path | None = None,
     anonymous_company: bool = False,
 ) -> tuple[list[str], list[str]]:
     errors: list[str] = []
@@ -311,6 +456,21 @@ def validate(
 
     if not application_dir.is_dir():
         return [f"Application directory does not exist: {application_dir}"], warnings
+
+    errors.extend(application_freshness_errors(application_dir))
+
+    format_change_authorized = False
+    if allow_format_change:
+        approval_errors = validate_format_change_approval(
+            application_dir, format_change_approval
+        )
+        errors.extend(approval_errors)
+        format_change_authorized = not approval_errors
+    elif format_change_approval is not None:
+        errors.append(
+            "format-change approval: --format-change-approval may only be used with "
+            "--allow-format-change"
+        )
 
     required_files = ANONYMOUS_REQUIRED_FILES if anonymous_company else REQUIRED_FILES
     paths = {name: application_dir / name for name in required_files}
@@ -471,54 +631,53 @@ def validate(
                     + ", ".join(added)
                 )
 
-        if not allow_format_change:
+        if not format_change_authorized:
             for relative_path in sorted(original_paths & tailored_paths):
                 original_text = read_text(original_tex[relative_path])
                 tailored_text = read_text(tailored_tex[relative_path])
+                if latex_preamble_signature(original_text) != latex_preamble_signature(
+                    tailored_text
+                ):
+                    errors.append(
+                        f"resume-source/{relative_path}: LaTeX preamble changed; "
+                        "restore the original document setup and macros"
+                    )
                 if latex_structure_signature(original_text) != latex_structure_signature(
                     tailored_text
                 ):
                     errors.append(
                         f"resume-source/{relative_path}: LaTeX structure changed; "
-                        "restore it or rerun with --allow-format-change after user approval"
+                        "restore the original environments, entries, and bullets"
+                    )
+                if latex_section_signature(original_text) != latex_section_signature(
+                    tailored_text
+                ):
+                    errors.append(
+                        f"resume-source/{relative_path}: section names or order changed; "
+                        "restore the original section sequence"
+                    )
+                if latex_layout_signature(original_text) != latex_layout_signature(
+                    tailored_text
+                ):
+                    errors.append(
+                        f"resume-source/{relative_path}: body layout commands changed; "
+                        "restore the original spacing, sizing, columns, and environment options"
                     )
                 if latex_format_signature(original_text) != latex_format_signature(
                     tailored_text
                 ):
                     errors.append(
                         f"resume-source/{relative_path}: LaTeX formatting commands changed; "
-                        "restore them or rerun with --allow-format-change after user approval"
+                        "restore the original formatting"
                     )
 
-    support_suffixes = {
-        ".cls",
-        ".sty",
-        ".bst",
-        ".bbx",
-        ".cbx",
-        ".bib",
-        ".otf",
-        ".ttf",
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".svg",
-    }
     original_support = (
-        {
-            path.relative_to(original_dir): path
-            for path in original_dir.rglob("*")
-            if path.is_file() and path.suffix.lower() in support_suffixes
-        }
+        project_ancillary_files(original_dir)
         if original_dir.is_dir()
         else {}
     )
     tailored_support = (
-        {
-            path.relative_to(tailored_dir): path
-            for path in tailored_dir.rglob("*")
-            if path.is_file() and path.suffix.lower() in support_suffixes
-        }
+        project_ancillary_files(tailored_dir)
         if tailored_dir.is_dir()
         else {}
     )
@@ -529,7 +688,7 @@ def validate(
             errors.append(
                 "resume-source/: original and tailored LaTeX support-file layouts differ"
             )
-        elif not allow_format_change:
+        elif not format_change_authorized:
             for relative_path in sorted(original_paths):
                 if (
                     original_support[relative_path].read_bytes()
@@ -537,7 +696,7 @@ def validate(
                 ):
                     errors.append(
                         f"resume-source/{relative_path}: LaTeX support file changed; "
-                        "restore it or rerun with --allow-format-change after user approval"
+                        "restore the original project dependency or build instruction"
                     )
 
     for label, directory in (
@@ -579,6 +738,7 @@ def main() -> int:
         args.application_dir,
         args.linkedin_limit,
         allow_format_change=args.allow_format_change,
+        format_change_approval=args.format_change_approval,
         anonymous_company=args.anonymous_company,
     )
 

@@ -7,6 +7,13 @@ import argparse
 import re
 from pathlib import Path
 
+from check_skill_freshness import (
+    application_state_status,
+    skill_root,
+    verify_installation,
+    write_application_state,
+)
+
 
 TEMPLATES = {
     "company-context.md": """# Company Context: {company}
@@ -187,6 +194,24 @@ def main() -> int:
 
     company = args.company or "Undisclosed Company"
     output = args.output or Path(f"{slugify(company)}-{slugify(args.role)}")
+    had_existing_content = output.is_dir() and any(output.iterdir())
+
+    current_skill, installation_errors = verify_installation(skill_root())
+    if installation_errors:
+        raise SystemExit(
+            "Skill freshness check failed:\n- " + "\n- ".join(installation_errors)
+        )
+
+    state_file = output / "skill-state.json"
+    if had_existing_content:
+        _, _, state_errors = application_state_status(state_file, current_skill)
+        if state_errors:
+            raise SystemExit(
+                "Existing application has missing or stale skill instructions:\n- "
+                + "\n- ".join(state_errors)
+                + "\nReconcile it with the current skill before running the scaffold again."
+            )
+
     output.mkdir(parents=True, exist_ok=True)
     source_dir = output / "resume-source"
     source_dir.mkdir(exist_ok=True)
@@ -212,6 +237,10 @@ def main() -> int:
         )
         print(f"CREATE: {target}")
         created += 1
+
+    if not state_file.exists():
+        write_application_state(state_file, current_skill)
+        print(f"CREATE: {state_file}")
 
     print(f"Workspace ready: {output} ({created} created, {skipped} preserved)")
     return 0

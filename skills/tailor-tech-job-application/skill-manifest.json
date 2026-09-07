@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "skill_name": "tailor-tech-job-application",
+  "skill_version": "1.0.0",
+  "content_sha256": "b58be995d358e037bf6cd308523511a03ae4af557b6c8951974ad4212931560b",
+  "files": {
+    "SKILL.md": "473bd884cc35b969c3a4725f3dc927b886e0e8c58194a93741216451ee49831b",
+    "VERSION": "59854984853104df5c353e2f681a15fc7924742f9a2e468c29af248dce45ce03",
+    "agents/openai.yaml": "5c83390b247376b52eec6436cd7d7179669e987d9f49fcc1daebac1a23427941",
+    "references/application-writing.md": "132144cfbfb2602b3c04091f66b1ad70d94dacde13f40b43e1ad86239c9a1a52",
+    "references/company-research.md": "7b0823d174a68dc8d578838deba9febb8464dcada39a520820497ae02afc1043",
+    "references/interviewer-questions.md": "390b2414a84fbe474e9b96b07c1672fb3c10af0cd60ed77b85aae42f44bfef93",
+    "references/resume-tailoring.md": "d18d09825b2c7d7d8a7e352ca49c377d4620fb777b2a34dc3c9537fd5a86e98f",
+    "references/version-history.md": "a0f0b03a983100f7a0bff4683d9ac0c0bff7caf14434358101ed6e8c1dde0c0e",
+    "scripts/check_skill_freshness.py": "747e2bd300c4bb0229feb07510e408b6012a42cf4d5cc8a7c30eb4e5ef103b52",
+    "scripts/scaffold_application.py": "b73200bbc7a03c479721964d2a680d3443d35434280d4f9cb0b010f3a7de04a2",
+    "scripts/test_skill_freshness.py": "423f363cc33eddcde1b22c7391b42705e2670aaebadc18dc75bb3701b06ed8d4",
+    "scripts/test_validate_application.py": "78571c37aa5be489288959fb4b72d981f213031d852a6293e9cc09292681564c",
+    "scripts/validate_application.py": "828333bac34298a7840da90b425d6f9de9a5ad9db530e139068c735a4726fca4"
+  }
+}

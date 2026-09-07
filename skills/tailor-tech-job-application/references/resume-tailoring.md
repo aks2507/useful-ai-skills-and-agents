@@ -30,7 +30,7 @@ If only a PDF is available, do not reconstruct it in another format or template.
 
 ## Content-only default
 
-Unless the user explicitly asks for a redesign, preserve all formatting and structural choices, including:
+The resume is layout-locked for every new application. Unless the current user explicitly asks for a redesign of this resume in the current task, preserve all formatting and structural choices, including:
 
 - document class, packages, preamble, custom commands, and build engine;
 - page size, margins, columns, typography, colors, rules, icons, and spacing;
@@ -40,6 +40,8 @@ Unless the user explicitly asks for a redesign, preserve all formatting and stru
 - headers, footers, links, alignment, and visual hierarchy.
 
 Do not replace the LaTeX template, convert it to another authoring system, run a broad formatter, or make the layout more ATS-oriented on your own. If the current format creates an ATS or readability concern, report it separately and leave the structure unchanged.
+
+A request to tailor, improve, optimize, make the resume fit, or strengthen ATS alignment is not permission to alter layout. Approval from another role, resume, conversation, or user is not transferable.
 
 Content edits may adjust summary wording, skill emphasis, and the wording inside an existing bullet or entry. Keep every change within the candidate evidence ledger. A content edit should not add a new structural command, section, environment, bullet, or entry.
 
@@ -109,4 +111,20 @@ Before delivery:
 8. Review the LaTeX diff. It should contain content changes only unless the user requested otherwise.
 9. Run `scripts/validate_application.py` on the full application directory.
 
-Revise content until the PDF fits and looks polished. Do not deliver an uncompiled `.tex` file or claim that it fits based only on source length.
+For ordinary tailoring, run the validator without `--allow-format-change`. Any locked-mode layout error must be fixed by restoring the original layout and revising content. Do not use the override to silence a failed check.
+
+When the user has explicitly requested a format or structure change, record the exact request in an application-local `format-change-approval.md`:
+
+```markdown
+# User-authorized resume format change
+
+User request: <exact user instruction>
+
+## Approved changes
+
+- <specific authorized change>
+```
+
+Only then may validation use both `--allow-format-change` and `--format-change-approval path/to/format-change-approval.md`. The approval record does not authorize changes beyond its listed scope.
+
+Revise content until the PDF fits and looks polished. Do not deliver an uncompiled `.tex` file, claim that it fits based only on source length, or claim format preservation without a successful locked validation and visual comparison.

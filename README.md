@@ -36,6 +36,16 @@ The skill uses current first-party and trustworthy independent sources, excludes
 
 Each job description is processed in a separate workspace. If a listing does not disclose the employer, the skill continues with a role-focused cover letter and resume instead of inventing company context.
 
+## Generated content
+
+Completed articles and runnable implementations live under `generated-content/`.
+
+| Question | Level | Article | PDF with complete code appendix | Source |
+|---|---|---|---|---|
+| Coffee vending machine | Junior | [Markdown](generated-content/coffee-vending-machine/coffee-vending-machine-junior.md) | [PDF](generated-content/coffee-vending-machine/coffee-vending-machine-junior.pdf) | [Java implementation and tests](generated-content/coffee-vending-machine/solution/src) |
+
+The coffee vending machine article includes the Java 25 compile, test, and demo commands.
+
 ## Install locally
 
 When working inside this repository, Codex discovers the canonical application skill through `.agents/skills`. The repository entry is a symlink to the corresponding directory under `skills/`, so a pull updates the discovered skill without maintaining a second copy.
@@ -81,6 +91,12 @@ The manifest command refuses to bless changed content under an unchanged version
 ## Repository layout
 
 ```text
+generated-content/
+└── coffee-vending-machine/
+    ├── coffee-vending-machine-junior.md
+    ├── coffee-vending-machine-junior.pdf
+    └── solution/src/
+
 skills/
 ├── craft-lld-interview-article/
 │   ├── SKILL.md

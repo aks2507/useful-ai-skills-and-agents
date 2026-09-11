@@ -21,6 +21,10 @@ Write a compact candidate/interviewer dialogue. After a meaningful answer, expla
 
 - Name excluded production concerns and plausible extensions.
 
+### Setup Assumptions
+
+State which values are trusted demo configuration and which inputs are runtime caller choices. Use this boundary to decide what needs validation.
+
 ## Finding the Core Entities
 
 Classify the useful nouns. Explain why central classes remain and why tempting concepts become values, enums, fields, constants, parameters, or external concerns.
@@ -92,6 +96,8 @@ Cover the happy path, relevant illegal states, validation order, pseudocode, del
 ## Complete Runnable Implementation
 
 Point to the real packaged files under `solution/`. Explain the directory boundaries and give exact compile, test, and demo commands plus their observed outcomes.
+
+State the size of all application files plus the short demo, and a credible typing/explanation budget. Keep that entire implementation small enough for the round. Label additional focused tests as study support; do not hide extra application logic in the appendix.
 
 The PDF generated from this Markdown adds every source, test, and required build file in **Appendix: Complete Runnable Code**.
 

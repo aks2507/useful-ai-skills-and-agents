@@ -40,7 +40,7 @@ If tests live in a `.test` package, reflect that package in the test command.
 ## Python 3
 
 - Use type hints and small modules; do not emulate Java with an interface for every class.
-- Prefer `dataclasses`, `Enum`, and explicit domain exceptions.
+- Prefer `dataclasses`, `Enum`, and simple return values or built-in exceptions suited to the caller. Keep data-holder initialization brief under the setup assumptions.
 - Use `unittest` unless the existing project already uses pytest.
 - Inject a callable clock or identifier supplier when needed.
 

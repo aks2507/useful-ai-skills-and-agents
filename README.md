@@ -20,6 +20,16 @@ Turns an underspecified low-level design or object-oriented design prompt into a
 
 The skill is designed around a typical one-hour interview. It favors the smallest design that preserves the important invariants, shows how each class was earned, and clearly separates interview implementation from production follow-ups.
 
+#### LLD examples
+
+Completed LLD articles and runnable implementations live inside the LLD skill at `skills/craft-lld-interview-article/generated-content/`.
+
+| Question | Level | Article | PDF with complete code appendix | Source |
+|---|---|---|---|---|
+| Coffee vending machine | Junior | [Markdown](skills/craft-lld-interview-article/generated-content/coffee-vending-machine/coffee-vending-machine-junior.md) | [PDF](skills/craft-lld-interview-article/generated-content/coffee-vending-machine/coffee-vending-machine-junior.pdf) | [Java implementation and tests](skills/craft-lld-interview-article/generated-content/coffee-vending-machine/solution/src) |
+
+The coffee vending machine article includes Java 25 compile, test, and demo commands. The skill budgets the complete application and short demo for the interview, treats fixed setup as trusted, and keeps validation focused on caller actions and domain rules.
+
 ### `tailor-tech-job-application`
 
 Builds a tailored application package for one or more tech roles with:
@@ -35,16 +45,6 @@ Builds a tailored application package for one or more tech roles with:
 The skill uses current first-party and trustworthy independent sources, excludes anonymous employee reviews and social-media rumors, and prevents unsupported keywords or accomplishments from entering the application.
 
 Each job description is processed in a separate workspace. If a listing does not disclose the employer, the skill continues with a role-focused cover letter and resume instead of inventing company context.
-
-## Generated content
-
-Completed articles and runnable implementations live under `generated-content/`.
-
-| Question | Level | Article | PDF with complete code appendix | Source |
-|---|---|---|---|---|
-| Coffee vending machine | Junior | [Markdown](generated-content/coffee-vending-machine/coffee-vending-machine-junior.md) | [PDF](generated-content/coffee-vending-machine/coffee-vending-machine-junior.pdf) | [Java implementation and tests](generated-content/coffee-vending-machine/solution/src) |
-
-The coffee vending machine article includes the Java 25 compile, test, and demo commands.
 
 ## Install locally
 
@@ -91,17 +91,16 @@ The manifest command refuses to bless changed content under an unchanged version
 ## Repository layout
 
 ```text
-generated-content/
-└── coffee-vending-machine/
-    ├── coffee-vending-machine-junior.md
-    ├── coffee-vending-machine-junior.pdf
-    └── solution/src/
-
 skills/
 ├── craft-lld-interview-article/
 │   ├── SKILL.md
 │   ├── agents/openai.yaml
 │   ├── assets/article-template.md
+│   ├── generated-content/
+│   │   └── coffee-vending-machine/
+│   │       ├── coffee-vending-machine-junior.md
+│   │       ├── coffee-vending-machine-junior.pdf
+│   │       └── solution/src/
 │   ├── references/
 │   └── scripts/
 └── tailor-tech-job-application/

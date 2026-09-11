@@ -27,6 +27,7 @@ Additionally:
 - Read `references/problem-archetypes.md` after classifying the problem; load only the matching archetype sections.
 - Read `references/diagrams.md` before creating diagrams.
 - Read `references/implementation-and-verification.md` before writing executable code.
+- Read `references/interview-code-budget.md` before choosing guards, helpers, or the amount of runnable code.
 - Read `references/language-profiles.md` for the selected language's source layout and commands.
 
 Use `assets/article-template.md` as a starting structure. For a filesystem artifact, run `scripts/scaffold_article.py`, then replace every scaffold prompt with problem-specific content.
@@ -40,7 +41,7 @@ Establish:
 3. Time box. Default to a 60-minute round with roughly 45 minutes of candidate-led design and implementation.
 4. Implementation language. Honor the user's choice. Otherwise prefer Java when a suitable compiler is available, then Python 3. State the choice.
 5. Whether concurrency, persistence, UI, networking, payment, or external hardware is in scope.
-6. Desired output location and whether actual files are requested.
+6. Desired output location and whether actual files are requested. Default to this skill's `generated-content/<problem-slug>/`; keep published examples inside the LLD skill, not in a repository-wide generated-content directory. Honor an explicit alternative output path.
 
 Ask only when a missing answer would materially change the design or make a write unsafe. Otherwise state conservative assumptions in the article.
 
@@ -128,12 +129,12 @@ Keep names identical across prose, diagrams, and code. A simple junior solution 
 Choose two to four methods that reveal the design. For each:
 
 1. Explain the happy path.
-2. List relevant invalid states and edge cases.
+2. Identify caller mistakes and domain failures that can occur under the agreed contract; distinguish them from trusted demo setup.
 3. Validate before mutating.
 4. Show explicit pseudocode.
 5. Explain delegation and mutation order.
 
-Give the highest-invariant operation the most attention. Say why routine constructors, accessors, and mechanical helpers are skipped in the narrative.
+Give the highest-invariant operation the most attention. Keep routine constructors and accessors brief. The narrative can emphasize a few methods, but the entire runnable application plus its demo must fit the stated interview time.
 
 ### 9. Create the organized runnable solution
 
@@ -141,9 +142,11 @@ Create complete source and tests under `solution/` using the selected language l
 
 Organize by responsibility and dependency direction, not by file count. Typical packages are `model`, `service`, and a demonstrated `policy` boundary. Keep closely related tiny types together where the language permits. Do not create a package for every class, a catch-all `utils` package, or a framework-like layer with one file in each directory.
 
-Include a deterministic demo and focused tests for the core workflow, invalid input, lifecycle transitions, and applicable atomicity or concurrency guarantees. Do not leave placeholders or elided branches.
+Use the same small implementation in the article, source tree, and PDF appendix. Include a short deterministic demo and focused verification of the main behavior and failure invariant. Additional tests are study support; keep them compact and label their role. Avoid defensive setup checks, redundant downstream validation, speculative helpers, and an exception case for every field. Apply the review in `references/interview-code-budget.md` across all code. Do not leave placeholders or elided branches.
 
 Compile and run the implementation. Fix failures before calling it complete.
+
+Record the size of the complete application and demo, review the typing and explanation work against the interview budget, and simplify if it does not fit. Line counts are a review aid, never a target to meet through compressed formatting.
 
 ### 10. Build the paired documents
 
@@ -190,7 +193,7 @@ End with junior, mid-level, and senior expectations for the same problem. Give s
 When creating files, return:
 
 ```text
-<problem-slug>/
+skills/craft-lld-interview-article/generated-content/<problem-slug>/
 ├── <problem-slug>[-<level>].md
 ├── <problem-slug>[-<level>].pdf
 └── solution/
@@ -200,6 +203,8 @@ When creating files, return:
 ```
 
 The Markdown must point to real source files and include exact commands. The PDF must present the same article and contain the full runnable code appendix. Clearly separate interview implementation, mention-only ideas, and production extensions.
+
+Generated examples are outputs, not instruction references. Do not load existing articles as templates for unrelated questions.
 
 For text-only requests, still provide complete code blocks and state that they were not executed unless a runnable workspace was available. A PDF is mandatory only when creating filesystem artifacts.
 
@@ -214,6 +219,8 @@ For text-only requests, still provide complete code blocks and state that they w
 - Do not duplicate mutable state without a named synchronization invariant.
 - Do not discuss thread safety without the shared resource and complete critical section.
 - Do not call code complete until it compiles/runs and tests pass.
+- Do not hide a larger production-style implementation in the source tree or appendix; all application code and the short demo must be credible to type during the round.
+- Do not add validation for trusted setup or repeat a check across layers without a concrete caller need or invariant.
 - Do not maintain Markdown and PDF prose independently.
 - Do not use `article.md` or `article.pdf` as final filenames.
 - Do not ship a flat multi-class source dump when meaningful package boundaries exist.

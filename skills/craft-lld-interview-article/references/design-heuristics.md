@@ -52,7 +52,7 @@ Prefer:
 
 - one enum over several mutually dependent booleans;
 - separate semantic types over reusing an enum that admits invalid values;
-- validated value objects over ambiguous primitive bundles;
+- meaningful values over ambiguous primitive bundles, with validation only where the input contract requires it;
 - maps or sets that enforce uniqueness naturally;
 - immutable records after creation.
 
@@ -68,7 +68,7 @@ Validate closest to the state being protected:
 
 - orchestrator validates workflow and lifecycle;
 - collection owner validates membership and bounds;
-- value object validates its own construction;
+- value object validates construction only when its data can be invalid within the agreed input contract; hardcoded setup can initialize directly;
 - resource owner validates and mutates atomically.
 
 ## Choose data structures from operations
@@ -141,7 +141,7 @@ For check-then-act, protect both the check and mutation in one critical section.
 
 ## Preserve transaction semantics
 
-Validate all inputs and required resources before the first mutation. For multi-object workflows, choose one:
+Validate relevant runtime inputs and required resources before the first mutation. Trusted configuration does not need to be revalidated on each call. For multi-object workflows, choose one:
 
 - hold all necessary locks and commit atomically;
 - use a staged reservation/commit lifecycle;
@@ -154,6 +154,8 @@ Explain what an observer can see during the operation.
 ### Junior
 
 Favor working decomposition, clear state, and the core invariant. Provide hints for advanced algorithms and concurrency.
+
+Budget the complete application and demo, including constructors and helpers. Use `interview-code-budget.md` to prune setup validation, repeated guards, and unnecessary code across every class.
 
 ### Mid-level
 

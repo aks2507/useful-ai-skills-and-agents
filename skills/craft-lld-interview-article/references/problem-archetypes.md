@@ -92,4 +92,4 @@ Examples: wallet transfer, warehouse inventory, library loans, order fulfillment
 
 ## Selecting the article's pressure points
 
-For the primary archetype, choose the invariant and one comparison listed above. Add a second archetype only when a requirement genuinely introduces another pressure. Keep the base solution recognizable as something a candidate can explain and partially implement within the stated time box.
+For the primary archetype, choose the invariant and one comparison listed above. Add a second archetype only when a requirement genuinely introduces another pressure. Keep the complete base application and demo feasible to type and explain within the stated time box.

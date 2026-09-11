@@ -8,7 +8,8 @@ Release an article only when every mandatory gate passes. Use the score to guide
 
 - The time box and candidate level are explicit.
 - Requirements and out-of-scope choices are separate.
-- The implemented design is credible within the interview time box.
+- The complete application and demo, including constructors and helpers, are credible to type within the interview time box; code size and the proposed time allocation are visible.
+- Guards address realistic caller mistakes or required invariants. Trusted setup assumptions are explicit; constructors and downstream helpers do not repeat defensive validation by default.
 - Production concerns are clearly labeled rather than silently included.
 
 ### Requirement traceability
@@ -96,5 +97,7 @@ Ask:
 9. Which package exists only to make the tree look architectural?
 10. Does the PDF omit or disagree with any Markdown section or source file?
 11. Which em dash, “not X but Y” contrast, or generic transition is doing habitual rather than necessary work?
+12. Which guard, helper, accessor, or test exists only to harden trusted setup or support an unrequested behavior?
+13. Does the appendix quietly expand the application beyond what the candidate can type and explain?
 
 Revise any positive finding before release.

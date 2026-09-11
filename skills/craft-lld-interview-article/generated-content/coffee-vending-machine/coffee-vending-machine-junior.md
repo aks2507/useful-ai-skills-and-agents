@@ -20,7 +20,7 @@ The menu should contain data rather than recipe-specific branches. `Ingredient` 
 
 **Interviewer:** No. Each menu entry has one fixed recipe and price.
 
-One immutable `Beverage` record can carry the code, display name, price, and recipe. We do not need add-on classes or a builder.
+One `Beverage` record can carry the code, display name, price, and recipe. The demo creates fixed recipes with `Map.of`.
 
 **Candidate:** How does payment work?
 
@@ -42,7 +42,7 @@ We can return the completed drink from `dispense()`. Motor control, brewing prog
 
 ### Final Requirements
 
-1. Configure a menu whose beverage codes are unique.
+1. Use the menu configured at startup to look up drinks by code.
 2. Store a fixed price and ingredient recipe for each beverage.
 3. Select one known beverage only when its recipe is currently available.
 4. Accept only 25, 50, 100, and 200 cent coins after a selection.
@@ -61,6 +61,12 @@ We can return the completed drink from `dispense()`. Motor control, brewing prog
 - administrator authentication and restocking operations;
 - persistence, networking, telemetry, and concurrent customers.
 
+### Setup Assumptions
+
+The demo supplies a valid menu with unique codes, positive prices and recipe amounts, and non-negative starting stock. Recipes are fixed `Map.of` values. These are setup assumptions, so constructors simply store the data they receive.
+
+Customer actions still need checks: a code may not be on the menu, a coin may be unsupported, or the customer may try to dispense too early. Ingredient stock can also be insufficient. Those cases affect the purchase workflow and belong in the implementation.
+
 ## Finding the Core Entities
 
 Some familiar coffee-machine concepts do not earn classes in this contract. A grinder and brewer matter to physical hardware, but the simulation has one synchronous `dispense()` operation. A customer supplies commands and has no stored identity. Coins have no behavior beyond membership in a fixed set of accepted integer values.
@@ -69,7 +75,7 @@ Some familiar coffee-machine concepts do not earn classes in this contract. A gr
 |---|---|---|
 | Coffee vending machine | Class | Coordinates the menu, customer session, payment checks, and preparation. |
 | Ingredient inventory | Class | Owns mutable quantities and the all-or-nothing consumption rule. |
-| Beverage | Immutable record | Carries stable menu data and a recipe. |
+| Beverage | Record | Carries fixed menu data and a recipe. |
 | Dispense result | Immutable record | Preserves the completed purchase after the machine resets. |
 | Ingredient | Enum | Defines the closed ingredient keys and embeds measurement units in their names. |
 | Coin | Integer plus a set | Four fixed values need validation, not an object lifecycle. |
@@ -82,8 +88,8 @@ Some familiar coffee-machine concepts do not earn classes in this contract. A gr
 |---|---|---|
 | `CoffeeVendingMachine` | Public purchase workflow | At most one selected beverage and its balance. |
 | `IngredientInventory` | Check and consume recipes | Quantities stay non-negative; failed consumption changes nothing. |
-| `Beverage` | Describe one menu option | Positive price and positive recipe amounts. |
-| `DispenseResult` | Report one completed purchase | `paidCents - priceCents == changeCents`. |
+| `Beverage` | Describe one menu option | Trusted code, name, price, and fixed recipe. |
+| `DispenseResult` | Report one completed purchase | Values computed by the successful dispense. |
 | `Ingredient` | Give ingredient quantities semantic keys | Each enum name includes its measurement unit. |
 
 ## Exploring the Design
@@ -123,7 +129,7 @@ This is correct for one drink, but each new recipe adds another branch to the pu
 
 #### Great for this scope: let the inventory consume a recipe
 
-Represent a recipe as `Map<Ingredient, Integer>`. `IngredientInventory.consume(recipe)` validates the entire map in one pass and mutates quantities in a second pass. The same operation prepares espresso or latte without changing the machine workflow.
+Represent a recipe as `Map<Ingredient, Integer>`. `IngredientInventory.consume(recipe)` checks that stock covers every recipe entry in one pass and mutates quantities in a second pass. The same operation prepares espresso or latte without changing the machine workflow.
 
 The map adds a small amount of indirection, but it keeps one stock owner and one mutation path. A junior candidate can explain and code both loops within the interview.
 
@@ -133,10 +139,10 @@ The map adds a small amount of indirection, but it keeps one stock owner and one
 
 An enum with `IDLE`, `SELECTED`, and `READY` seems natural. `READY`, however, depends on the selected beverage's price and the current balance. Every accepted coin could require an extra state update.
 
-The selected code and balance already contain the needed facts:
+The selected beverage and balance already contain the needed facts:
 
-- no selected code means the machine is idle;
-- a selected code means coins may be inserted;
+- no selected beverage means the machine is idle;
+- a selected beverage means coins may be inserted;
 - `balanceCents >= beverage.priceCents()` means dispensing has enough money.
 
 Deriving these conditions avoids a second mutable representation. Each public method still checks whether its transition is legal.
@@ -152,14 +158,14 @@ Deriving these conditions avoids a second mutable representation. Each public me
 | Requirement or invariant | State needed | Why this owner |
 |---|---|---|
 | Resolve a configured drink | `menuByCode` | The machine owns its selectable menu boundary. |
-| Allow one active purchase | `selectedCode` | Selection is customer-session state. |
+| Allow one active purchase | `selected` beverage | Retains the menu object resolved at selection. |
 | Accumulate inserted money | `balanceCents` | Balance spans coin insertions, cancellation, and dispensing. |
 | Validate denominations | `SUPPORTED_COINS` | Coin acceptance belongs at the public input boundary. |
 | Prepare the selected recipe | `inventory` collaborator | Ingredient mutation belongs to its dedicated owner. |
 
 | Caller need or transition | Method | Result or mutation |
 |---|---|---|
-| Start a purchase | `select(code)` | Stores one known, available beverage code. |
+| Start a purchase | `select(code)` | Stores one known, available beverage. |
 | Add payment | `insertCoin(cents)` | Validates and increases the active balance. |
 | Finish a purchase | `dispense()` | Consumes one recipe, resets the session, and returns the result. |
 | Abandon a purchase | `cancel()` | Clears the session and returns the balance. |
@@ -168,7 +174,7 @@ Deriving these conditions avoids a second mutable representation. Each public me
 class CoffeeVendingMachine
   menuByCode: Map<String, Beverage>
   inventory: IngredientInventory
-  selectedCode: String?
+  selected: Beverage?
   balanceCents: int
 
   select(code): void
@@ -183,9 +189,11 @@ class CoffeeVendingMachine
 
 **Collaborators:** It reads `Beverage` menu data, delegates stock checks and consumption to `IngredientInventory`, and creates `DispenseResult`.
 
+Keeping the selected object makes its price and recipe available directly. The menu stays fixed during a purchase, so storing only the code would add a lookup with no useful behavior. The private `clearSession()` helper resets the two fields used by both cancellation and dispensing.
+
 ### `IngredientInventory`: ingredient stock owner
 
-`IngredientInventory` stores the physical ingredient quantities. It is the only class allowed to decrement them. Iterating over the closed `Ingredient` enum gives the validation and mutation passes a stable order.
+`IngredientInventory` stores the physical ingredient quantities. It is the only class allowed to decrement them. Each operation visits the recipe entries; an ingredient absent from stock has quantity zero. The constructor copies the starting quantities into its own map so the inventory can mutate them.
 
 | Requirement or invariant | State needed | Why this owner |
 |---|---|---|
@@ -201,22 +209,22 @@ class CoffeeVendingMachine
 
 ```text
 class IngredientInventory
-  quantities: EnumMap<Ingredient, Integer>
+  quantities: Map<Ingredient, Integer>
 
   canPrepare(recipe): boolean
   consume(recipe): void
   quantityOf(ingredient): int
 ```
 
-**Invariant:** Every quantity is non-negative. If one recipe requirement cannot be met, all quantities retain their previous values.
+**Invariant:** Starting from the valid setup, quantities stay non-negative. If one recipe requirement cannot be met, all quantities retain their previous values. The order of the map entries does not affect this guarantee.
 
 **Knowledge boundary:** The inventory understands ingredient amounts, not menu codes, prices, coins, or customer-session order.
 
 **Collaborators:** It receives immutable recipe maps from a `Beverage`; only `CoffeeVendingMachine` calls it during a purchase.
 
-### `Beverage`: immutable menu entry
+### `Beverage`: fixed menu entry
 
-`Beverage` represents the stable information needed after a code is selected. Its constructor copies the recipe, so outside code cannot alter the requirements after the beverage joins the menu.
+`Beverage` represents the stable information needed after a code is selected. A Java record supplies its constructor and accessors. The recipe is already immutable because the demo uses `Map.of`; the record adds no validation or copying.
 
 | Requirement or invariant | State needed | Why this owner |
 |---|---|---|
@@ -227,8 +235,8 @@ class IngredientInventory
 
 | Caller need or transition | Method | Result or mutation |
 |---|---|---|
-| Create valid menu data | record constructor | Rejects blank text, non-positive price, empty recipe, or invalid amounts. |
-| Read menu data | record accessors | Returns immutable state; no mutation method is needed. |
+| Configure a drink | record constructor | Stores the supplied demo values. |
+| Read menu data | record accessors | Exposes the fixed fields and recipe. |
 
 ```text
 record Beverage
@@ -238,7 +246,7 @@ record Beverage
   recipe: Map<Ingredient, Integer>
 ```
 
-**Invariant:** Price and every recipe amount are positive, and the stored recipe cannot be changed through the caller's map.
+**Setup contract:** Prices and recipe amounts are positive, and the demo passes immutable recipe maps. A record alone does not make a mutable map immutable; this property comes from how the demo constructs it.
 
 **Knowledge boundary:** A beverage does not know inventory quantities, payment state, or preparation order.
 
@@ -257,7 +265,7 @@ record Beverage
 | Caller need or transition | Method | Result or mutation |
 |---|---|---|
 | Receive purchase outcome | record accessors | Exposes immutable data with no follow-up mutation. |
-| Validate monetary consistency | record constructor | Requires paid amount to cover price and verifies change. |
+| Preserve a completed result | record constructor | Stores the outcome already computed by `dispense()`. |
 | Address an ingredient | enum value | Supplies a closed, type-safe map key. |
 
 ```text
@@ -272,7 +280,7 @@ enum Ingredient
   MILK_ML
 ```
 
-**Invariant:** `changeCents` equals `paidCents - beverage.priceCents()`. Ingredient keys always state their unit.
+**Invariant owner:** `dispense()` computes `changeCents` as `paidCents - beverage.priceCents()` after checking payment. The result records that calculation. Ingredient keys state their unit.
 
 **Knowledge boundary:** These values do not coordinate the purchase or mutate ingredient quantities.
 
@@ -284,7 +292,7 @@ enum Ingredient
 classDiagram
     class CoffeeVendingMachine {
       -menuByCode: Map
-      -selectedCode: String
+      -selected: Beverage
       -balanceCents: int
       +select(code)
       +insertCoin(cents)
@@ -292,7 +300,7 @@ classDiagram
       +cancel() int
     }
     class IngredientInventory {
-      -quantities: EnumMap
+      -quantities: Map
       +canPrepare(recipe) boolean
       +consume(recipe)
       +quantityOf(ingredient) int
@@ -336,53 +344,55 @@ The lifecycle is intentionally small. Payment readiness is calculated from the s
 
 ## Core Implementation
 
-In a junior interview, the most useful methods to implement are `select`, `IngredientInventory.consume`, and `dispense`. `insertCoin` and `cancel` are short enough to add once the main invariant works. Record accessors and constructor checks belong in the complete solution but need little whiteboard time.
+Start with `select`, `IngredientInventory.consume`, and `dispense`, since they establish lookup, stock ownership, and purchase completion. Then add `insertCoin`, `cancel`, the small data types, and the demo. All of this belongs to the interview implementation.
 
 ### Operation: select an available beverage
 
-`select(code)` first protects the one-session rule. It then resolves the code and asks the inventory whether the fixed recipe is available. `selectedCode` changes only after all checks pass.
+`select(code)` first protects the one-session rule. It then resolves the code and asks the inventory whether the fixed recipe is available. `selected` changes only after all checks pass.
 
 ```text
-if a selected code already exists: reject
+if a selected beverage already exists: reject
 beverage = menuByCode[code]
 if beverage is missing: reject
 if inventory cannot prepare beverage.recipe: reject
-selectedCode = code
+selected = beverage
 ```
 
 An unavailable latte does not create a half-started session. The customer may immediately select another menu item.
+
+The null check belongs immediately after `menuByCode.get(code)`: that lookup can fail for a caller's choice. Once a beverage is found, its fields come from the trusted setup.
 
 ### Operation: consume a complete recipe
 
 The inventory performs two loops. The first loop is read-only and rejects an unavailable recipe. The second loop executes only after every requirement is known to fit.
 
 ```text
-for each Ingredient:
-    required = recipe amount, or zero
-    if quantity < required: reject
+for each (ingredient, required) in recipe:
+    if quantityOf(ingredient) < required: reject
 
-for each Ingredient:
-    quantity -= recipe amount, or zero
+for each (ingredient, required) in recipe:
+    quantity[ingredient] = quantityOf(ingredient) - required
 ```
 
 This mutation order is the main correctness proof. With water 40, coffee 18, and milk 100, a latte requiring 120 ml of milk fails during the first loop. Water and coffee remain untouched.
 
 ### Operation: dispense the selected drink
 
-`dispense()` validates the customer session before asking the inventory to mutate. It builds a valid result, consumes one recipe, and then clears both session fields.
+`dispense()` checks selection and payment, then asks the inventory to consume the recipe. On success, it records the result and clears both session fields.
 
 ```text
-beverage = require active selection
-if balance < beverage.price: reject
-if inventory cannot prepare recipe: reject
+if selected is missing: reject
+if balance < selected.price: reject
 
-result = DispenseResult(beverage, balance, balance - price)
-inventory.consume(recipe)
-clear selected code and balance
+inventory.consume(selected.recipe)
+result = DispenseResult(selected, balance, balance - selected.price)
+clear selected beverage and balance
 return result
 ```
 
-The second availability check matters even though selection checked earlier. The inventory could have changed through maintenance code between selection and dispense. This implementation remains single-threaded; a concurrent version would need one critical section covering the final availability check, consumption, and session reset.
+`select()` gives early feedback about an unavailable drink. `consume()` owns the check that protects its stock mutation. `dispense()` delegates to it directly, without another availability check of its own. If consumption fails, the result and session reset are never reached, so the customer can still cancel for a refund.
+
+`insertCoin()` checks that a drink is selected and the denomination is supported, then adds the amount. `cancel()` saves the current balance, clears the session, and returns the saved amount. Built-in exceptions are sufficient for the rejected operations.
 
 ## Complete Runnable Implementation
 
@@ -407,6 +417,14 @@ solution/
 
 The `model` package owns domain values and ingredient state. `service` contains the public purchase workflow. `demo` and the test root depend on that API; the model never depends on the service.
 
+### What you would type in the round
+
+The six application files under `src/main/java`, including the demo, contain 170 lines with imports and blank lines included. Of those, 136 lines define the model and workflow; 34 lines configure two drinks and run one purchase. This is the complete application reproduced in the appendix.
+
+A possible 60-minute plan is 5 minutes for scope, 10 for class design, 30 to type the application and demo, 5 to verify, and 10 for questions or corrections. Typing speed varies; the budget is a planning estimate. The code has four customer operations and two stock loops, with routine records filling in the data model.
+
+`SolutionTest.java` is additional study support. During the round, run the short demo and trace a failed purchase. The test file automates those checks so you can change the implementation while practicing.
+
 Source files:
 
 - [`CoffeeVendingMachine.java`](solution/src/main/java/coffeevendingmachine/service/CoffeeVendingMachine.java)
@@ -429,7 +447,7 @@ java -cp out coffeevendingmachine.demo.Main
 Verified with `javac 25.0.4.1`:
 
 ```text
-All coffee vending machine tests passed.
+All coffee vending machine checks passed.
 Dispensed Latte; change: 50 cents; milk remaining: 380 ml
 ```
 
@@ -439,14 +457,16 @@ The matching PDF contains this same article followed by every source and test fi
 
 Start with a latte priced at 250 cents. Its recipe needs 40 ml water, 18 g coffee, and 120 ml milk. Inventory starts with 500 ml water, 100 g coffee, and 500 ml milk.
 
-1. `select("LAT")` resolves the latte and asks `IngredientInventory.canPrepare(recipe)`. All quantities fit, so the machine stores `LAT`. Inventory has not changed.
+1. `select("LAT")` resolves the latte and asks `IngredientInventory.canPrepare(recipe)`. All quantities fit, so the machine stores the beverage. Inventory has not changed.
 2. `insertCoin(200)` and `insertCoin(100)` move the session balance to 300 cents.
-3. `dispense()` validates the 250-cent price and checks the recipe again. It creates a result with 50 cents change.
+3. `dispense()` confirms that the 300-cent balance covers the 250-cent price and calls `IngredientInventory.consume(recipe)`.
 4. `IngredientInventory.consume(recipe)` completes its validation pass, then decrements all three quantities. Water becomes 460, coffee becomes 82, and milk becomes 380.
-5. The machine clears the selected code and balance, then returns the latte result.
+5. The machine creates the latte result with 50 cents change, clears the selected beverage and balance, and returns the result.
 6. An immediate second `dispense()` is rejected because no selection exists. Ingredient quantities remain at the values from the one successful drink.
 
-The automated tests also prove that insufficient payment preserves every ingredient, cancellation returns the balance without preparing a drink, an invalid coin adds no money, an unavailable latte cannot be selected, duplicate menu codes are rejected, and a failed multi-ingredient consumption changes nothing.
+For the rejection trace, try dispensing after inserting only 200 cents. The payment check fails before any stock mutation; adding another coin can complete the same purchase, or cancelling can refund it. Separately, a recipe that lacks milk must leave the available water and coffee untouched.
+
+The study checks exercise caller errors, a successful retry with change, cancellation and session reset, and all-or-nothing stock consumption. They use valid setup data throughout.
 
 ## Extensibility
 
@@ -464,7 +484,7 @@ Introduce states such as `HEATING`, `GRINDING`, `BREWING`, `DISPENSING`, and `FA
 
 ### Support restocking
 
-Add `restock(ingredient, amount)` to `IngredientInventory` and keep administrator authorization outside the domain model. The customer purchase API remains unchanged.
+Add `restock(ingredient, amount)` to `IngredientInventory` and reject non-positive amounts at that new caller boundary. If administrators can edit recipes or prices too, validate those fields when accepting the edit. This changes the input contract; the base demo still uses fixed configuration.
 
 ## What Is Expected at Each Level
 
@@ -472,11 +492,11 @@ Add `restock(ingredient, amount)` to `IngredientInventory` and keep administrato
 
 A strong junior solution should identify the machine, beverage, and ingredient inventory; use integer money; keep quantities non-negative; validate the full recipe before decrementing anything; and demonstrate both a successful purchase and rejected operations. A map-based recipe and four public machine operations are enough. Strategy, State, Factory, and hardware classes are unnecessary for this contract.
 
-An interviewer may hint that ingredient consumption needs two passes or that money should use integer cents. After that hint, the candidate should be able to finish the workflow and tests.
+An interviewer may hint that ingredient consumption needs two passes or that money should use integer cents. After that hint, the candidate should be able to finish the application and a short demonstration. More detailed automated tests can be useful during practice.
 
 ### Mid-level
 
-A mid-level candidate should reach the all-or-nothing recipe invariant without prompting, defend the source of truth for inventory, copy immutable recipe data, and explain how change inventory would expand the transaction boundary.
+A mid-level candidate should reach the all-or-nothing recipe invariant without prompting, defend the source of truth for inventory, explain the trusted-setup boundary, and describe how change inventory would expand the transaction boundary.
 
 ### Senior
 

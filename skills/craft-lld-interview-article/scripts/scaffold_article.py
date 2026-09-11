@@ -33,7 +33,10 @@ def parse_args() -> argparse.Namespace:
         description="Create question[-level].md and organized solution roots."
     )
     parser.add_argument("--title", required=True, help="Human-readable question title")
-    parser.add_argument("--output-dir", required=True, type=Path)
+    parser.add_argument(
+        "--output-dir", type=Path,
+        help="Override the default <skill>/generated-content/<problem-slug> directory",
+    )
     parser.add_argument("--language", default="Java")
     parser.add_argument(
         "--candidate-level",
@@ -80,10 +83,11 @@ def main() -> int:
     template_path = skill_root / "assets" / "article-template.md"
     title = question_title(args.title)
     slug = slugify(title)
+    output_dir = args.output_dir or skill_root / "generated-content" / slug
     stem = slug if args.candidate_level is None else f"{slug}-{args.candidate_level}"
-    article_path = args.output_dir / f"{stem}.md"
-    pdf_path = args.output_dir / f"{stem}.pdf"
-    solution_dir = args.output_dir / "solution"
+    article_path = output_dir / f"{stem}.md"
+    pdf_path = output_dir / f"{stem}.pdf"
+    solution_dir = output_dir / "solution"
     display_level = args.candidate_level or "mid-level"
     root_package = package_name(slug)
 
@@ -102,7 +106,7 @@ def main() -> int:
     for placeholder, value in replacements.items():
         text = text.replace(placeholder, value)
 
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    output_dir.mkdir(parents=True, exist_ok=True)
     for directory in source_roots(solution_dir, args.language, root_package):
         directory.mkdir(parents=True, exist_ok=True)
     article_path.write_text(text, encoding="utf-8")

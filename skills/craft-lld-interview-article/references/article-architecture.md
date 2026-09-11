@@ -74,7 +74,7 @@ State the main boundary in one paragraph: who orchestrates, who owns data-specif
 Tell the reader which methods are worth implementing in an interview and why. For each central method:
 
 - outline the happy path;
-- enumerate edge cases;
+- identify relevant runtime failures, with trusted setup assumptions kept explicit;
 - show pseudocode;
 - point out delegation and mutation order;
 - discuss an alternative only when it changes the trade-off.
@@ -113,14 +113,13 @@ Generate the PDF from the finalized Markdown so both formats have the same body.
 
 | Segment | Candidate-led time |
 |---|---:|
-| Requirements | 5–7 min |
-| Entities | 3–5 min |
-| Class design and comparisons | 12–15 min |
-| Core implementation | 15–20 min |
-| Verification | 3–5 min |
-| Extensions and interviewer discussion | Remaining time |
+| Requirements | 5 min |
+| Entities, class design, and a focused comparison | 10 min |
+| Complete application and short demo | 30 min |
+| Verification | 5 min |
+| Interviewer discussion and corrections | 10 min |
 
-The article may be longer than the spoken interview. Label what the candidate should implement, mention, or defer.
+The article may be longer than the spoken interview. Label what the candidate should implement, mention, or defer. All application code in the source tree and appendix belongs in the implementation budget; additional study tests may be separate. Review actual code size and complexity rather than assuming this schedule proves feasibility.
 
 ## Editorial cadence
 

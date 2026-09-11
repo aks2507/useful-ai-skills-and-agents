@@ -2,6 +2,8 @@
 
 ## Naming
 
+Keep this skill's generated bundles under `skills/craft-lld-interview-article/generated-content/<problem-slug>/` in the repository. This is the default scaffold destination. Honor an explicitly requested alternative path, and keep source links relative to the article. Do not create a shared repository-root output directory for unrelated skills.
+
 Slugify the question title in lowercase kebab case.
 
 - Explicit junior request: `vending-machine-junior.md` and `vending-machine-junior.pdf`.
@@ -30,6 +32,8 @@ The PDF must contain:
 8. relative paths and a SHA-256 manifest so the appendix can be checked against disk.
 
 Routine code may remain out of the Markdown narrative, but it may not be omitted from the PDF appendix.
+
+The appendix reproduces the same interview-sized application. It is not a place for extra hardening, alternate implementations, or speculative helpers. Label additional tests as study support in the article.
 
 ## Build command
 

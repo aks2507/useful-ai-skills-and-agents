@@ -22,6 +22,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 from reportlab.platypus import (
     Flowable,
+    KeepTogether,
     ListFlowable,
     ListItem,
     PageBreak,
@@ -159,6 +160,8 @@ def styles(body_font: str, mono_font: str) -> dict[str, ParagraphStyle]:
 
 def inline_markup(value: str, mono_font: str) -> str:
     value = html.escape(value.strip())
+    # Local source links remain useful as readable paths in a standalone PDF.
+    value = re.sub(r"\[([^\]]+)\]\((solution/[^)]+)\)", r"\1 (\2)", value)
     value = re.sub(
         r"\[([^\]]+)\]\((https?://[^)]+)\)",
         r'<link href="\2" color="#315CF5">\1</link>',
@@ -193,15 +196,20 @@ def add_code(story: list[Flowable], text: str, style: ParagraphStyle, width: int
     lines = text.splitlines() or [""]
     for offset in range(0, len(lines), 50):
         chunk = "\n".join(lines[offset : offset + 50])
-        story.append(
-            Preformatted(
-                chunk,
-                style,
-                maxLineLength=width,
-                splitChars=" ".join([".", ",", ":", ";", " "]),
-                newLineChars=" ↳ ",
-            )
+        block = Preformatted(
+            chunk,
+            style,
+            maxLineLength=width,
+            splitChars=" ".join([".", ",", ":", ";", " "]),
+            newLineChars=" ↳ ",
         )
+        if len(lines) <= 20:
+            group = [block]
+            if story and isinstance(story[-1], Paragraph) and story[-1].getKeepWithNext():
+                group.insert(0, story.pop())
+            story.append(KeepTogether(group))
+        else:
+            story.append(block)
 
 
 class ClassDiagram(Flowable):

@@ -37,7 +37,7 @@ Builds a tailored application package for one or more tech roles with:
 - a cited company context dossier saved before drafting when the employer is named;
 - a prioritized job analysis and candidate evidence ledger;
 - a concise recruiter email and LinkedIn connection note for named employers;
-- a contribution-first cover letter;
+- a narrative cover letter explaining specific interest, fit, and career direction, supported by one brief example;
 - 5-6 research-grounded questions for the interviewer when company research is available;
 - a truthful one-page tailored resume that preserves the supplied LaTeX format and structure;
 - validation for length, sources, LaTeX structure, PDF page count, and common AI-writing tells.

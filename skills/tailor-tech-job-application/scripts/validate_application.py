@@ -372,6 +372,49 @@ def check_style(label: str, text: str) -> tuple[list[str], list[str]]:
     return errors, warnings
 
 
+def check_cover_letter(text: str) -> tuple[list[str], list[str]]:
+    """Flag mechanical risks, not narrative quality or factual correctness.
+
+    Numerical detail is a deliberately coarse advisory signal. It counts numeric
+    tokens, not achievements: a before/after result can contain two tokens, and
+    a company scale figure can count too. Editorial review remains mandatory,
+    including for metric-free achievement lists and spelled-out numbers.
+    """
+    errors: list[str] = []
+    warnings: list[str] = []
+    body = markdown_body(text)
+    body = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", body)
+    count = word_count(body)
+    if count > 600:
+        errors.append(f"cover-letter.md: {count} words is unlikely to fit one page")
+    elif count < 250 or count > 400:
+        warnings.append(
+            f"cover-letter.md: {count} words; the usual target is 250 to 400; "
+            "do not pad or cut a complete narrative just to meet this guide"
+        )
+
+    # Exclude common reference metadata; do not classify numbers as achievements.
+    prose = re.sub(r"https?://\S+", "", body)
+    prose = re.sub(r"\b\d{4}-\d{2}-\d{2}\b", "", prose)
+    prose = re.sub(
+        r"^\s*(?:date|re|ref(?:erence)?|role\s+id|job\s+id)\s*:.*$",
+        "", prose, flags=re.IGNORECASE | re.MULTILINE,
+    )
+    numbers = re.findall(r"(?<![\w])\d+(?:[,.]\d+)*(?![\w])", prose)
+    if len(numbers) >= 5:
+        warnings.append(
+            f"cover-letter.md: dense numerical detail ({len(numbers)} numeric tokens); "
+            "review for a resume-in-prose or report-card effect. Keep only evidence "
+            "that explains interest, fit, or contribution; removing digits alone is not a fix"
+        )
+    if re.search(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)\S", body, re.MULTILINE):
+        warnings.append(
+            "cover-letter.md: list formatting detected; use connected letter paragraphs "
+            "and check that achievements are a supporting minority"
+        )
+    return errors, warnings
+
+
 def pdf_page_count(path: Path) -> tuple[int | None, str]:
     failures: list[str] = []
     for module_name in ("pypdf", "PyPDF2"):
@@ -530,11 +573,9 @@ def validate(
 
     cover = markdown_body(text_files.get("cover-letter.md", ""))
     if cover:
-        count = word_count(cover)
-        if count > 600:
-            errors.append(f"cover-letter.md: {count} words is unlikely to fit one page")
-        elif count < 250 or count > 500:
-            warnings.append(f"cover-letter.md: {count} words; the usual target is 250 to 500")
+        cover_errors, cover_warnings = check_cover_letter(cover)
+        errors.extend(cover_errors)
+        warnings.extend(cover_warnings)
 
     questions_text = text_files.get("interviewer-questions.md", "")
     if questions_text:

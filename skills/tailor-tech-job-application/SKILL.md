@@ -110,13 +110,13 @@ Extract the resume into a working text representation. Save `candidate-evidence.
 
 Map the strongest supported evidence to the role's highest priorities. Keep unsupported items out of every deliverable. Ask the user for missing evidence only when it could materially improve the application.
 
-### 4. Establish one contribution thesis
+Record candidate-supplied motivations and factual corrections with their source. Earlier generated letters are not independent evidence. Check their facts against the original resume or explicit user corrections, and keep proposed motivation distinct from the candidate's stated intentions.
 
-Write a private one or two sentence thesis that connects:
+### 4. Establish the reason for applying
 
-`company or role problem -> role outcome -> candidate evidence -> distinctive contribution`
+Save a short `Cover letter narrative plan` in `candidate-evidence.md` connecting the work that attracts the candidate, one relevant experience, the contribution that experience supports, and a sensible next step. Follow the motivation and evidence rules in `references/application-writing.md`.
 
-Use this thesis as the common spine for all deliverables. Vary the wording and depth by format so the package feels consistent without repeating itself.
+Use that connection across the package. The cover letter should explain interest and fit through a coherent narrative; the resume carries the detailed achievements. Do not assemble a letter by expanding the highest-scoring resume bullets into paragraphs.
 
 ### 5. Draft the outreach, cover letter, and interview questions
 
@@ -124,12 +124,14 @@ In named-company mode, create:
 
 - `recruiter-email.md`, no more than 200 words including the subject line;
 - `linkedin-connection.md`, within the current platform limit, or 200 characters when the limit is unknown;
-- `cover-letter.md`, concise enough for one page and shaped around contribution first, with career growth as a smaller supporting theme.
+- `cover-letter.md`, a one-page narrative about interest in this work, credible fit, useful contribution, and why the role makes sense now. Past achievements should be a supporting minority, normally one brief example; quantified results are optional.
 - `interviewer-questions.md`, containing 5-6 concise questions the candidate can ask at the end of an interview.
 
 Follow `references/application-writing.md` and `references/interviewer-questions.md`. Prefer specific, plain language over inflated claims. Demonstrate strong suitability through evidence rather than declaring the candidate the best. Ground at least four interview questions in the company's work, current challenges, or problem-solving approach, using `company-context.md` rather than generic interview lists.
 
-In anonymous-company mode, create only `cover-letter.md` and the tailored resume as user-facing artifacts. The cover letter should focus on what the candidate can bring to the role using the job analysis and evidence ledger. Use a neutral greeting and omit company-specific motivation, claims, recruiter outreach, LinkedIn outreach, and interviewer questions.
+In anonymous-company mode, create only `cover-letter.md` and the tailored resume as user-facing artifacts. Explain interest in the actual responsibilities, connect one supported experience, and describe how the candidate could help. Apply the same narrative and evidence-restraint guidance. Use a neutral greeting and omit company-specific motivation, claims, recruiter outreach, LinkedIn outreach, and interviewer questions.
+
+Complete the editorial acceptance review in `references/application-writing.md` before delivery and save the findings in `candidate-evidence.md`. A letter that only lists accomplishments must be rewritten even if its numbers and word count pass validation.
 
 ### 6. Tailor the resume
 
@@ -154,6 +156,9 @@ Verify that:
 - in named-company mode, company-specific statements appear in `company-context.md` with citations;
 - in anonymous-company mode, public materials contain no invented company context;
 - candidate claims appear in `candidate-evidence.md` as supported or safe rephrasing;
+- the cover letter opens with specific interest, connects a brief experience to future contribution, and passes the recorded editorial review;
+- past achievements remain a supporting minority and numbers or technical terms earn their space;
+- motivations are grounded in candidate statements or identified privately as modest proposed angles, without invented history or career promises;
 - no deliverable implies experience with an unsupported requirement;
 - in named-company mode, the email, connection note, cover letter, and resume share a contribution thesis without duplicating paragraphs;
 - in anonymous-company mode, the cover letter and resume share the role-focused contribution thesis without duplicating wording;
@@ -216,6 +221,7 @@ For anonymous-company mode, omit `company-context.md`, `recruiter-email.md`, `li
 - Never fabricate or inflate candidate experience, metrics, skills, titles, or responsibilities.
 - Do not stuff keywords or insert company language where the candidate has no matching experience.
 - Keep the recruiter email at or below 200 words.
+- Make the cover letter a coherent account of interest and fit. Do not deliver an achievement catalogue, metric-heavy report, or technology inventory in letter form.
 - In named-company mode, provide exactly 5-6 interviewer questions, predominantly grounded in company research.
 - Preserve the supplied LaTeX resume format and structure. Change either only when the user explicitly requests it.
 - Treat resume layout preservation as a per-task lock. Never reuse or infer format-change approval.

@@ -27,8 +27,9 @@ Completed LLD articles and runnable implementations live inside the LLD skill at
 | Question | Level | Article | PDF with complete code appendix | Source |
 |---|---|---|---|---|
 | Coffee vending machine | Junior | [Markdown](skills/craft-lld-interview-article/generated-content/coffee-vending-machine/coffee-vending-machine-junior.md) | [PDF](skills/craft-lld-interview-article/generated-content/coffee-vending-machine/coffee-vending-machine-junior.pdf) | [Java implementation and tests](skills/craft-lld-interview-article/generated-content/coffee-vending-machine/solution/src) |
+| Stack Overflow | Mid-level (4 years) | [Markdown](skills/craft-lld-interview-article/generated-content/stack-overflow/stack-overflow-mid-level.md) | [PDF](skills/craft-lld-interview-article/generated-content/stack-overflow/stack-overflow-mid-level.pdf) | [Java implementation and tests](skills/craft-lld-interview-article/generated-content/stack-overflow/solution/src) |
 
-The coffee vending machine article includes Java 25 compile, test, and demo commands. The skill budgets the complete application and short demo for the interview, treats fixed setup as trusted, and keeps validation focused on caller actions and domain rules.
+Both articles include Java 25 compile, test, and demo commands. The skill budgets the complete application and short demo for the interview, treats fixed setup as trusted, and keeps validation focused on caller actions and domain rules.
 
 ### `tailor-tech-job-application`
 
@@ -97,9 +98,13 @@ skills/
 │   ├── agents/openai.yaml
 │   ├── assets/article-template.md
 │   ├── generated-content/
-│   │   └── coffee-vending-machine/
-│   │       ├── coffee-vending-machine-junior.md
-│   │       ├── coffee-vending-machine-junior.pdf
+│   │   ├── coffee-vending-machine/
+│   │   │   ├── coffee-vending-machine-junior.md
+│   │   │   ├── coffee-vending-machine-junior.pdf
+│   │   │   └── solution/src/
+│   │   └── stack-overflow/
+│   │       ├── stack-overflow-mid-level.md
+│   │       ├── stack-overflow-mid-level.pdf
 │   │       └── solution/src/
 │   ├── references/
 │   └── scripts/

@@ -11,12 +11,12 @@ Turns an underspecified low-level design or object-oriented design prompt into a
 - requirements discovery and explicit scope;
 - contextual alternatives, including Bad/Good/Great only when the decision earns them;
 - requirement-led state and method derivation for every central class;
-- UML-lite Mermaid diagrams;
+- UML-lite diagrams and original scenario figures where they clarify behavior;
 - a focused class and API design;
 - a sensibly packaged runnable implementation and tests;
 - question-and-level-named Markdown and matching PDF outputs;
 - the complete verified codebase in the PDF appendix;
-- verification, extensions, and level-specific expectations.
+- verification, explained extension pseudocode, and level-specific expectations.
 
 The skill is designed around a typical one-hour interview. It favors the smallest design that preserves the important invariants, shows how each class was earned, and clearly separates interview implementation from production follow-ups.
 
@@ -28,8 +28,13 @@ Completed LLD articles and runnable implementations live inside the LLD skill at
 |---|---|---|---|---|
 | Coffee vending machine | Junior | [Markdown](skills/craft-lld-interview-article/generated-content/coffee-vending-machine/coffee-vending-machine-junior.md) | [PDF](skills/craft-lld-interview-article/generated-content/coffee-vending-machine/coffee-vending-machine-junior.pdf) | [Java implementation and tests](skills/craft-lld-interview-article/generated-content/coffee-vending-machine/solution/src) |
 | Stack Overflow | Mid-level (4 years) | [Markdown](skills/craft-lld-interview-article/generated-content/stack-overflow/stack-overflow-mid-level.md) | [PDF](skills/craft-lld-interview-article/generated-content/stack-overflow/stack-overflow-mid-level.pdf) | [Java implementation and tests](skills/craft-lld-interview-article/generated-content/stack-overflow/solution/src) |
+| Porter | Junior | [Markdown](skills/craft-lld-interview-article/generated-content/porter/porter-junior.md) | [PDF](skills/craft-lld-interview-article/generated-content/porter/porter-junior.pdf) | [Java implementation and tests](skills/craft-lld-interview-article/generated-content/porter/solution/src) |
 
-Both articles include Java 25 compile, test, and demo commands. The skill budgets the complete application and short demo for the interview, treats fixed setup as trusted, and keeps validation focused on caller actions and domain rules.
+All articles include Java 25 compile, test, and demo commands. The skill budgets the complete application and short demo for the interview, treats fixed setup as trusted, and keeps validation focused on caller actions and domain rules.
+
+The Stack Overflow example also demonstrates the latest editorial pass: a connected running scenario, selective emphasis, before/after figures, and extension sketches separate from the unchanged Java solution. The [research notes](skills/craft-lld-interview-article/references/editorial-research.md) explain the teaching choices and their sources.
+
+The Porter example uses an explicit driver availability flag: allocation scans only the roster, and guarded delivery/cancellation transitions release the driver. Its tests cover stale commands after reassignment, so old bookings cannot free a driver serving a new customer.
 
 ### `tailor-tech-job-application`
 
@@ -102,9 +107,14 @@ skills/
 │   │   │   ├── coffee-vending-machine-junior.md
 │   │   │   ├── coffee-vending-machine-junior.pdf
 │   │   │   └── solution/src/
-│   │   └── stack-overflow/
-│   │       ├── stack-overflow-mid-level.md
-│   │       ├── stack-overflow-mid-level.pdf
+│   │   ├── stack-overflow/
+│   │   │   ├── stack-overflow-mid-level.md
+│   │   │   ├── stack-overflow-mid-level.pdf
+│   │   │   └── solution/src/
+│   │   └── porter/
+│   │       ├── porter-junior.md
+│   │       ├── porter-junior.pdf
+│   │       ├── figures/
 │   │       └── solution/src/
 │   ├── references/
 │   └── scripts/

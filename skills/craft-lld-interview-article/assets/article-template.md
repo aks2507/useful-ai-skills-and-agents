@@ -4,7 +4,7 @@
 
 ## Understanding the Problem
 
-Give the short domain primer and the interview-sized interpretation.
+Give the short domain primer and the interview-sized interpretation. Choose a small concrete scenario that can recur at the central decision and verification.
 
 > **Prompt:** State the deliberately short question.
 
@@ -51,7 +51,7 @@ Run one concrete scenario through the alternatives and select the least complex 
 
 ## Class Design
 
-Derive every central class. Repeat this subsection for each one; group only tiny records, enums, exceptions, and helpers.
+Derive every central class. Repeat this subsection for each one; group only tiny records, enums, exceptions, and helpers. The tables below are options, not a demand to repeat obvious information. Use a compact paragraph instead when it teaches the same mapping more clearly.
 
 ### `CentralClass`: responsibility
 
@@ -73,6 +73,8 @@ class CentralClass
 
 **Invariant:** State the rule this class preserves.
 **Collaborators:** Name only direct collaborators and why they are needed.
+
+Place an original scenario figure at a difficult decision when it saves mental reconstruction. Use a takeaway caption, exact names, and selective bold for the rule the reader should retain.
 
 ## Final Class Design
 
@@ -107,7 +109,7 @@ Replay one concrete scenario. Connect each call to its validator, state read, mu
 
 ## Extensibility
 
-Explain two to four likely follow-ups and the smallest localized change each requires.
+Explain two to four likely follow-ups. For each behavioral change: identify the new requirement and owner, show a compact pseudocode delta, and explain a revealing case plus the new cost or invariant. Label sketches **not implemented** and keep them out of the runnable base. Do not repeat a whole implementation or hide the new logic behind an empty method.
 
 ## What Is Expected at Each Level
 

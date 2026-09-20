@@ -9,6 +9,7 @@ import html
 import math
 import re
 import sys
+import xml.etree.ElementTree as ET
 from collections import OrderedDict
 from pathlib import Path
 from typing import Iterable
@@ -22,6 +23,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase import pdfmetrics
 from reportlab.platypus import (
     Flowable,
+    Image,
     KeepTogether,
     ListFlowable,
     ListItem,
@@ -69,8 +71,10 @@ def parse_args() -> argparse.Namespace:
 
 def register_fonts() -> tuple[str, str]:
     candidates = [
-        ("/System/Library/Fonts/Supplemental/Arial.ttf", "ArialLocal"),
-        ("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", "DejaVuLocal"),
+        ("/System/Library/Fonts/Supplemental", "ArialLocal",
+         ("Arial.ttf", "Arial Bold.ttf", "Arial Italic.ttf", "Arial Bold Italic.ttf")),
+        ("/usr/share/fonts/truetype/dejavu", "DejaVuLocal",
+         ("DejaVuSans.ttf", "DejaVuSans-Bold.ttf", "DejaVuSans-Oblique.ttf", "DejaVuSans-BoldOblique.ttf")),
     ]
     mono_candidates = [
         ("/System/Library/Fonts/Menlo.ttc", "MenloLocal"),
@@ -78,10 +82,17 @@ def register_fonts() -> tuple[str, str]:
     ]
     body = "Helvetica"
     mono = "Courier"
-    for path, name in candidates:
-        if Path(path).is_file():
+    for directory, name, filenames in candidates:
+        paths = [Path(directory) / filename for filename in filenames]
+        if all(path.is_file() for path in paths):
             try:
-                pdfmetrics.registerFont(TTFont(name, path))
+                names = [name, name + "-Bold", name + "-Italic", name + "-BoldItalic"]
+                for font_name, path in zip(names, paths):
+                    pdfmetrics.registerFont(TTFont(font_name, str(path)))
+                pdfmetrics.registerFontFamily(
+                    name, normal=names[0], bold=names[1],
+                    italic=names[2], boldItalic=names[3],
+                )
                 body = name
                 break
             except Exception:
@@ -99,24 +110,25 @@ def register_fonts() -> tuple[str, str]:
 
 def styles(body_font: str, mono_font: str) -> dict[str, ParagraphStyle]:
     base = getSampleStyleSheet()
+    bold_font = "Helvetica-Bold" if body_font == "Helvetica" else body_font + "-Bold"
     return {
         "title": ParagraphStyle(
-            "LLDTitle", parent=base["Title"], fontName=body_font,
+            "LLDTitle", parent=base["Title"], fontName=bold_font,
             fontSize=25, leading=30, textColor=INK, spaceAfter=12 * mm,
             alignment=TA_CENTER,
         ),
         "h1": ParagraphStyle(
-            "LLDH1", parent=base["Heading1"], fontName=body_font,
+            "LLDH1", parent=base["Heading1"], fontName=bold_font,
             fontSize=18, leading=22, textColor=INK, spaceBefore=7 * mm,
             spaceAfter=3 * mm, keepWithNext=True,
         ),
         "h2": ParagraphStyle(
-            "LLDH2", parent=base["Heading2"], fontName=body_font,
+            "LLDH2", parent=base["Heading2"], fontName=bold_font,
             fontSize=14, leading=18, textColor=BLUE, spaceBefore=5 * mm,
             spaceAfter=2 * mm, keepWithNext=True,
         ),
         "h3": ParagraphStyle(
-            "LLDH3", parent=base["Heading3"], fontName=body_font,
+            "LLDH3", parent=base["Heading3"], fontName=bold_font,
             fontSize=11.5, leading=15, textColor=INK, spaceBefore=4 * mm,
             spaceAfter=1.5 * mm, keepWithNext=True,
         ),
@@ -134,20 +146,20 @@ def styles(body_font: str, mono_font: str) -> dict[str, ParagraphStyle]:
             rightIndent=3 * mm, spaceAfter=2 * mm,
         ),
         "code": ParagraphStyle(
-            "LLDCode", fontName=mono_font, fontSize=6.7, leading=8.5,
+            "LLDCode", fontName=mono_font, fontSize=7.3, leading=9.4,
             textColor=INK, leftIndent=2.5 * mm, rightIndent=2.5 * mm,
             spaceBefore=1.5 * mm, spaceAfter=2.5 * mm,
             backColor=PALE_GRAY, borderColor=LINE, borderWidth=0.4,
             borderPadding=2 * mm,
         ),
         "appendix_code": ParagraphStyle(
-            "LLDAppendixCode", fontName=mono_font, fontSize=5.9, leading=7.3,
+            "LLDAppendixCode", fontName=mono_font, fontSize=7, leading=9,
             textColor=INK, leftIndent=1.5 * mm, rightIndent=1.5 * mm,
             spaceAfter=2 * mm, backColor=PALE_GRAY, borderColor=LINE,
             borderWidth=0.35, borderPadding=1.4 * mm,
         ),
         "appendix_path": ParagraphStyle(
-            "LLDAppendixPath", parent=base["Heading2"], fontName=body_font,
+            "LLDAppendixPath", parent=base["Heading2"], fontName=bold_font,
             fontSize=9.5, leading=12.5, textColor=BLUE, spaceBefore=4 * mm,
             spaceAfter=2 * mm, keepWithNext=True,
         ),
@@ -205,7 +217,7 @@ def add_code(story: list[Flowable], text: str, style: ParagraphStyle, width: int
         )
         if len(lines) <= 20:
             group = [block]
-            if story and isinstance(story[-1], Paragraph) and story[-1].getKeepWithNext():
+            while story and isinstance(story[-1], Paragraph) and story[-1].getKeepWithNext():
                 group.insert(0, story.pop())
             story.append(KeepTogether(group))
         else:
@@ -222,13 +234,13 @@ class ClassDiagram(Flowable):
         self.positions: dict[str, tuple[float, float, float, float]] = {}
 
     @staticmethod
-    def _parse(source: str) -> tuple[OrderedDict[str, list[str]], list[tuple[str, str, str]]]:
+    def _parse(source: str) -> tuple[OrderedDict[str, list[str]], list[tuple[str, str, str, str, str, str]]]:
         classes: OrderedDict[str, list[str]] = OrderedDict()
-        relations: list[tuple[str, str, str]] = []
+        relations: list[tuple[str, str, str, str, str, str]] = []
         current: str | None = None
         relation_re = re.compile(
-            r'^\s*([A-Za-z_]\w*)\s+(?:"[^"]+"\s+)?[<>|o*.\-]+\s+'
-            r'(?:"[^"]+"\s+)?([A-Za-z_]\w*)(?:\s*:\s*(.+))?$'
+            r'^\s*([A-Za-z_]\w*)\s+(?:"([^"]+)"\s+)?([<>|o*.\-]+)\s+'
+            r'(?:"([^"]+)"\s+)?([A-Za-z_]\w*)(?:\s*:\s*(.+))?$'
         )
         for raw in source.splitlines()[1:]:
             line = raw.strip()
@@ -251,10 +263,10 @@ class ClassDiagram(Flowable):
                 continue
             relation = relation_re.match(line)
             if relation:
-                left, right, label = relation.groups()
+                left, left_count, arrow, right_count, right, label = relation.groups()
                 classes.setdefault(left, [])
                 classes.setdefault(right, [])
-                relations.append((left, right, label or ""))
+                relations.append((left, right, label or "", arrow, left_count or "", right_count or ""))
         return classes, relations
 
     def wrap(self, avail_width: float, _avail_height: float) -> tuple[float, float]:
@@ -267,7 +279,7 @@ class ClassDiagram(Flowable):
         for start in range(0, len(items), columns):
             heights = [15 * mm + min(len(members), 7) * 3.8 * mm for _, members in items[start:start + columns]]
             row_heights.append(max(heights, default=15 * mm))
-        self.legend_height = (5 + len(self.relations) * 3.5) * mm if self.relations else 0
+        self.legend_height = (5 + len(self.relations) * 4) * mm if self.relations else 0
         total = sum(row_heights) + max(0, len(row_heights) - 1) * 10 * mm + 4 * mm + self.legend_height
         self.height = max(total, 25 * mm)
         self.positions.clear()
@@ -291,7 +303,7 @@ class ClassDiagram(Flowable):
         canvas.saveState()
         canvas.setStrokeColor(LINE)
         canvas.setLineWidth(0.8)
-        for left, right, label in self.relations:
+        for left, right, label, arrow, _, _ in self.relations:
             if left not in self.positions or right not in self.positions:
                 continue
             lx, ly, lw, lh = self.positions[left]
@@ -300,11 +312,11 @@ class ClassDiagram(Flowable):
             right_center = (rx + rw / 2, ry + rh / 2)
             x1, y1 = self._edge_point((lx, ly, lw, lh), right_center)
             x2, y2 = self._edge_point((rx, ry, rw, rh), left_center)
+            canvas.setDash(3, 2) if ".." in arrow else canvas.setDash()
             canvas.line(x1, y1, x2, y2)
-            angle = math.atan2(y2 - y1, x2 - x1)
-            size = 3.5
-            canvas.line(x2, y2, x2 - size * math.cos(angle - 0.5), y2 - size * math.sin(angle - 0.5))
-            canvas.line(x2, y2, x2 - size * math.cos(angle + 0.5), y2 - size * math.sin(angle + 0.5))
+            canvas.setDash()
+            self._marker(canvas, x1, y1, x2, y2, arrow.split("--")[0].split("..")[0])
+            self._marker(canvas, x2, y2, x1, y1, re.split(r"--|\.\.", arrow)[-1])
         for name, members in self.classes.items():
             x, y, width, height = self.positions[name]
             header = 8 * mm
@@ -317,7 +329,7 @@ class ClassDiagram(Flowable):
             canvas.setFont(self.body_font, 8.2)
             canvas.drawCentredString(x + width / 2, y + height - 5.3 * mm, name)
             canvas.setFillColor(INK)
-            canvas.setFont(self.mono_font, 6.2)
+            canvas.setFont(self.mono_font, 7)
             text_y = y + height - header - 4.5 * mm
             for member in members[:7]:
                 display = member if len(member) <= 48 else member[:45] + "..."
@@ -325,12 +337,41 @@ class ClassDiagram(Flowable):
                 text_y -= 3.8 * mm
         if self.relations:
             canvas.setFillColor(MUTED)
-            canvas.setFont(self.body_font, 5.8)
+            canvas.setFont(self.body_font, 7)
             canvas.drawString(0, self.legend_height - 3 * mm, "Relationships")
-            for index, (left, right, label) in enumerate(self.relations):
+            for index, (left, right, label, arrow, left_count, right_count) in enumerate(self.relations):
                 suffix = f": {label}" if label else ""
-                canvas.drawString(3 * mm, self.legend_height - (6.5 + index * 3.5) * mm, f"{left} → {right}{suffix}")
+                relation = f"{left} {left_count} {arrow} {right_count} {right}"
+                canvas.drawString(3 * mm, self.legend_height - (6.5 + index * 4) * mm, relation + suffix)
         canvas.restoreState()
+
+    @staticmethod
+    def _marker(canvas, x: float, y: float, other_x: float, other_y: float, kind: str) -> None:
+        """Draw an endpoint toward the relation interior, preserving UML meaning."""
+        if not kind:
+            return
+        angle = math.atan2(other_y - y, other_x - x)
+        ux, uy = math.cos(angle), math.sin(angle)
+        px, py = -uy, ux
+        def point(along: float, across: float) -> tuple[float, float]:
+            return x + ux * along + px * across, y + uy * along + py * across
+        canvas.setStrokeColor(MUTED)
+        if "|" in kind or kind in {"*", "o"}:
+            vertices = [(x, y), point(7, 4)]
+            if kind in {"*", "o"}:
+                vertices.append(point(14, 0))
+            vertices.append(point(7, -4))
+            path = canvas.beginPath()
+            path.moveTo(*vertices[0])
+            for vertex in vertices[1:]:
+                path.lineTo(*vertex)
+            path.close()
+            canvas.setFillColor(MUTED if kind == "*" else colors.white)
+            canvas.drawPath(path, stroke=1, fill=1)
+        elif kind in {">", "<"}:
+            canvas.line(x, y, *point(6, 3))
+            canvas.line(x, y, *point(6, -3))
+        canvas.setStrokeColor(LINE)
 
     @staticmethod
     def _edge_point(box: tuple[float, float, float, float], target: tuple[float, float]) -> tuple[float, float]:
@@ -530,7 +571,63 @@ def diagram_flowable(source: str, body_font: str, mono_font: str) -> Flowable | 
     return None
 
 
-def markdown_story(markdown: str, style: dict[str, ParagraphStyle], body_font: str, mono_font: str) -> tuple[list[Flowable], list[str]]:
+def local_figure(source: str, article_dir: Path) -> Flowable:
+    """Embed only bundle-local images; never fetch external figure resources."""
+    relative = Path(source.strip("<>"))
+    path = (article_dir / relative).resolve()
+    if relative.is_absolute() or ":" in source or not path.is_relative_to(article_dir.resolve()):
+        raise ValueError(f"Figure must be inside the article bundle: {source}")
+    if not path.is_file():
+        raise ValueError(f"Missing figure: {source}")
+    max_width, max_height = 170 * mm, 190 * mm
+    if path.suffix.lower() == ".svg":
+        svg = path.read_text(encoding="utf-8")
+        # Our diagrams are original, self-contained vectors. Reject resource loads
+        # before handing XML to the renderer, including embedded raster images.
+        if re.search(r"<!DOCTYPE|<!ENTITY|@import", svg, re.IGNORECASE):
+            raise ValueError(f"SVG must be self-contained: {source}")
+        root = ET.fromstring(svg)
+        for node in root.iter():
+            if node.tag.rsplit("}", 1)[-1] in {"script", "image", "foreignObject"}:
+                raise ValueError(f"Unsupported SVG resource element: {source}")
+            for attribute, value in node.attrib.items():
+                if attribute.rsplit("}", 1)[-1] == "href" and not value.startswith("#"):
+                    raise ValueError(f"External SVG reference: {source}")
+        for target in re.findall(r"url\(([^)]+)\)", svg, re.IGNORECASE):
+            if not target.strip(" \t\"'").startswith("#"):
+                raise ValueError(f"External SVG resource: {source}")
+        try:
+            from svglib.svglib import svg2rlg
+        except ImportError as exc:
+            raise ValueError("SVG figures require svglib in the PDF Python runtime") from exc
+        drawing = svg2rlg(str(path))
+        if drawing is None or drawing.width <= 0 or drawing.height <= 0:
+            raise ValueError(f"SVG has no drawable dimensions: {source}")
+        scale = min(max_width / drawing.width, max_height / drawing.height)
+        drawing.scale(scale, scale)
+        drawing.width *= scale
+        drawing.height *= scale
+        drawing.hAlign = "CENTER"
+        return drawing
+    if path.suffix.lower() not in {".png", ".jpg", ".jpeg"}:
+        raise ValueError(f"Unsupported figure format: {source}")
+    figure = Image(str(path))
+    scale = min(max_width / figure.imageWidth, max_height / figure.imageHeight)
+    figure.drawWidth = figure.imageWidth * scale
+    figure.drawHeight = figure.imageHeight * scale
+    return figure
+
+
+def add_figure(story: list[Flowable], figure: Flowable, caption: Paragraph | None = None) -> None:
+    group: list[Flowable] = [figure]
+    while story and isinstance(story[-1], Paragraph) and story[-1].getKeepWithNext():
+        group.insert(0, story.pop())
+    if caption is not None:
+        group.extend([Spacer(1, 1.5 * mm), caption])
+    story.extend([KeepTogether(group), Spacer(1, 3 * mm)])
+
+
+def markdown_story(markdown: str, style: dict[str, ParagraphStyle], body_font: str, mono_font: str, article_dir: Path | None = None) -> tuple[list[Flowable], list[str]]:
     story: list[Flowable] = []
     warnings: list[str] = []
     lines = markdown.splitlines()
@@ -540,6 +637,22 @@ def markdown_story(markdown: str, style: dict[str, ParagraphStyle], body_font: s
         line = lines[index]
         if not line.strip():
             index += 1
+            continue
+        figure_match = re.fullmatch(r"!\[([^\]]*)\]\(([^)]+)\)", line.strip())
+        if figure_match:
+            if article_dir is None:
+                raise ValueError("An article directory is required for local figures")
+            if not figure_match.group(1).strip():
+                raise ValueError("Figures need meaningful alt text")
+            figure = local_figure(figure_match.group(2), article_dir)
+            index += 1
+            while index < len(lines) and not lines[index].strip():
+                index += 1
+            caption = None
+            if index < len(lines) and re.match(r"^\*?Figure \d+[.:]", lines[index]):
+                caption = Paragraph(inline_markup(lines[index], mono_font), style["small"])
+                index += 1
+            add_figure(story, figure, caption)
             continue
         fence = re.match(r"^```\s*([^\s]*)", line)
         if fence:
@@ -554,7 +667,7 @@ def markdown_story(markdown: str, style: dict[str, ParagraphStyle], body_font: s
             if language == "mermaid":
                 diagram = diagram_flowable(code, body_font, mono_font)
                 if diagram is not None:
-                    story.extend([Spacer(1, 2 * mm), diagram, Spacer(1, 3 * mm)])
+                    add_figure(story, diagram)
                 else:
                     warnings.append("Unsupported Mermaid syntax rendered as source text")
                     story.append(Paragraph("[Diagram source fallback]", style["small"]))
@@ -578,7 +691,10 @@ def markdown_story(markdown: str, style: dict[str, ParagraphStyle], body_font: s
             rows, next_index = parsed_table
             max_columns = max(len(row) for row in rows)
             normalized = [row + [""] * (max_columns - len(row)) for row in rows]
-            data = [[Paragraph(inline_markup(cell, mono_font), style["table"]) for cell in row] for row in normalized]
+            data = [[Paragraph(
+                ("<b>" + inline_markup(cell, mono_font) + "</b>") if row_index == 0 else inline_markup(cell, mono_font),
+                style["table"],
+            ) for cell in row] for row_index, row in enumerate(normalized)]
             table = Table(data, colWidths=[None] * max_columns, repeatRows=1, hAlign="LEFT")
             table.setStyle(TableStyle([
                 ("BACKGROUND", (0, 0), (-1, 0), PALE_BLUE),
@@ -630,7 +746,7 @@ def markdown_story(markdown: str, style: dict[str, ParagraphStyle], body_font: s
         index += 1
         while index < len(lines):
             candidate = lines[index]
-            if not candidate.strip() or candidate.startswith("#") or candidate.startswith("```") or candidate.lstrip().startswith(">"):
+            if not candidate.strip() or candidate.startswith("#") or candidate.startswith("```") or candidate.startswith("![") or candidate.lstrip().startswith(">"):
                 break
             if re.match(r"^\s*(?:[-*+] |\d+[.)] )", candidate):
                 break
@@ -638,7 +754,13 @@ def markdown_story(markdown: str, style: dict[str, ParagraphStyle], body_font: s
                 break
             paragraph_lines.append(candidate.strip())
             index += 1
-        story.append(Paragraph(inline_markup(" ".join(paragraph_lines), mono_font), style["body"]))
+        paragraph = Paragraph(inline_markup(" ".join(paragraph_lines), mono_font), style["body"])
+        following = next((candidate for candidate in lines[index:] if candidate.strip()), "")
+        if following.startswith(("```", "![")):
+            # Keep a figure/code introduction with what it introduces. Headings
+            # already keep with this paragraph, so the whole chain travels.
+            paragraph.keepWithNext = True
+        story.append(paragraph)
     return story, warnings
 
 
@@ -665,6 +787,10 @@ def appendix_story(files: Iterable[Path], solution_dir: Path, style: dict[str, P
             "Every production source, test, and required build file from the verified solution is reproduced below. Paths are relative to the article directory.",
             style["body"],
         ),
+        Paragraph(
+            "A line beginning with ↳ continues the previous source line. Remove that marker and join the lines when copying code.",
+            style["small"],
+        ),
         Paragraph("Appendix manifest", style["h2"]),
         Preformatted("APPENDIX_MANIFEST_BEGIN", style["appendix_code"]),
     ]
@@ -689,7 +815,7 @@ def appendix_story(files: Iterable[Path], solution_dir: Path, style: dict[str, P
                     inline_markup(f"{relative.as_posix()} (continued)", mono_font),
                     style["appendix_path"],
                 ))
-            add_code(story, "\n".join(lines[offset:offset + chunk_size]), style["appendix_code"], 105)
+            add_code(story, "\n".join(lines[offset:offset + chunk_size]), style["appendix_code"], 96)
     return story
 
 
@@ -733,7 +859,7 @@ def main() -> int:
     title = article_title(markdown, article.stem.replace("-", " ").title())
     body_font, mono_font = register_fonts()
     style = styles(body_font, mono_font)
-    story, warnings = markdown_story(markdown, style, body_font, mono_font)
+    story, warnings = markdown_story(markdown, style, body_font, mono_font, article.parent)
     story.extend(appendix_story(files, solution_dir, style, mono_font))
 
     output.parent.mkdir(parents=True, exist_ok=True)

@@ -121,8 +121,23 @@ def validate_article(path: Path, candidate_level: str | None) -> tuple[list[str]
 
     if markdown.count("```") % 2:
         errors.append("Code fences are unbalanced.")
-    if re.search(r"```[^\n]*\n\s*```", markdown):
+    fences = re.findall(r"^```[^\n]*\n(.*?)^```\s*$", markdown, re.MULTILINE | re.DOTALL)
+    if any(not block.strip() for block in fences):
         errors.append("An empty fenced code block remains.")
+    for alt, source in re.findall(r"^!\[([^\]]*)\]\(([^)]+)\)\s*$", markdown, re.MULTILINE):
+        figure = (path.parent / source.strip("<>")).resolve()
+        if not alt.strip():
+            errors.append("An image has no alt text.")
+        if ":" in source or not figure.is_relative_to(path.parent.resolve()):
+            errors.append(f"Figure must be local to the article bundle: {source}")
+        elif not figure.is_file():
+            errors.append(f"Missing figure: {source}")
+    extensions = re.search(r"^## (?:Extensibility|Extensions)\s*\n(.*?)(?=^## |\Z)", markdown, re.MULTILINE | re.DOTALL)
+    if extensions:
+        for section in re.split(r"^### ", extensions.group(1), flags=re.MULTILINE)[1:]:
+            title, _, body = section.partition("\n")
+            if "```" not in body:
+                warnings.append(f"Extension '{title}' has no code delta; confirm it is purely conceptual and explain why a sketch is premature.")
     for pattern in PLACEHOLDER_PATTERNS:
         if re.search(pattern, markdown, re.IGNORECASE):
             errors.append(f"Unresolved placeholder-like text matches: {pattern}")

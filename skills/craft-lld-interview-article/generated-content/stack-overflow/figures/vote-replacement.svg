@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="294" viewBox="0 0 1000 294" role="img" aria-labelledby="title desc">
+  <title id="title">A vote replaces a choice</title>
+  <desc id="desc">User 40 votes on answer 2 three times. UP, repeated UP, and DOWN leave one map entry with scores 1, 1, and minus 1.</desc>
+  <rect width="1000" height="294" rx="18" fill="#f4f7fc"/>
+  <g font-family="Arial" fill="#172033">
+    <text x="28" y="36" font-size="22" font-weight="bold">Answer 2 · one reader, three calls</text>
+    <g fill="#ffffff" stroke="#c8d4e4" stroke-width="2">
+      <rect x="28" y="60" width="288" height="194" rx="12"/>
+      <rect x="356" y="60" width="288" height="194" rx="12"/>
+      <rect x="684" y="60" width="288" height="194" rx="12"/>
+    </g>
+    <g font-size="21" font-weight="bold">
+      <text x="48" y="96">1. UP</text>
+      <text x="376" y="96">2. UP again</text>
+      <text x="704" y="96">3. DOWN</text>
+    </g>
+    <g font-size="20" fill="#526074">
+      <text x="48" y="133">votes</text><text x="376" y="133">votes</text><text x="704" y="133">votes</text>
+    </g>
+    <g font-size="23" fill="#214eb4" font-weight="bold">
+      <text x="48" y="165">40 → UP</text><text x="376" y="165">40 → UP</text><text x="704" y="165">40 → DOWN</text>
+    </g>
+    <g font-size="22">
+      <text x="48" y="225">score = 1</text><text x="376" y="225">score = 1</text><text x="704" y="225">score = −1</text>
+    </g>
+    <g stroke="#526074" stroke-width="2.5" fill="none">
+      <path d="M322 161 H347 M339 154 L347 161 L339 168"/>
+      <path d="M650 161 H675 M667 154 L675 161 L667 168"/>
+    </g>
+    <text x="28" y="279" font-size="19" fill="#526074">The key stays 40. Only its value changes.</text>
+  </g>
+</svg>

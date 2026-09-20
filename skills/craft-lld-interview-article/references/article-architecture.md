@@ -97,7 +97,11 @@ Add likely "what if" questions. For each:
 - state whether existing code remains untouched;
 - discuss new correctness obligations.
 
-Stay high level unless the extension itself is the article's central lesson.
+For each behavioral extension, show a short **pseudocode delta**, not merely an interface or a pattern name. Include the changed method, field, query, or critical section that makes the proposal concrete. Reuse the article's names. Omit unchanged bodies with an explicitly named existing operation; never elide the new logic being taught.
+
+Use the natural progression: changed requirement → owner/seam → minimal sketch → revealing case → tradeoff. This is a reasoning checklist, not five mandatory subheadings. A small extension may need only two paragraphs and a few lines of code. Concurrency and transactions may need more: preserve complete lock/transaction boundaries, error release, and read visibility. Say what any abstract database or locking primitive guarantees.
+
+Label sketches as **not implemented** and distinguish mention-only from production work. They are discussion aids, not additional runnable source or a second full implementation. A conceptual policy discussion may omit code if no useful delta can yet be specified; explain the unresolved policy instead of presenting an empty method. Avoid bundling several unrelated features into one shallow follow-up.
 
 ### 10. Complete artifact bundle
 
@@ -134,3 +138,5 @@ Alternate among:
 - execution traces.
 
 Avoid long abstract lectures. Introduce principles after the concrete decision that demonstrates them. Vary form because the material changes; do not repeat identical rhetorical frames in every section.
+
+Keep the section order stable while strengthening continuity inside it. Let a concrete question carry the reader forward; resolve it when enough information is available, without contrived suspense. Reuse identifiers and state from the opening in comparisons and verification. Do not append a summary after every section or translate obvious code line by line.

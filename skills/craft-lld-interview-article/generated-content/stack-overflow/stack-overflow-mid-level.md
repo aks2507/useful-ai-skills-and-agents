@@ -4,9 +4,9 @@
 
 ## Understanding the Problem
 
-A developer asks a question. Other developers answer it. Readers vote on useful questions and answers, while the person who asked the question can mark one answer as accepted.
+A developer asks question 1 and receives answers 2 and 3. A reader upvotes answer 2 twice, then changes to a downvote. What should its score be? Later, the question author accepts answer 3. Should that change either score?
 
-Two different judgments are involved: the community's score and the author's accepted answer. The highest-scoring answer need not be the accepted one. Keeping those facts separate is more important here than remembering every feature on the website.
+Those few actions expose the two decisions at the heart of this problem: **a vote is a user's current choice**, and **acceptance is the question author's separate decision**. We will follow this small example from the requirements through the working code. No knowledge of the website's full feature set is needed.
 
 > **Prompt:** Design the core of a Stack Overflow-style question-and-answer system.
 
@@ -18,19 +18,19 @@ We will build an in-memory domain component. Four years of experience is treated
 
 **Interviewer:** Ask a question, answer it, read it with its answers, vote on either kind of post, and accept an answer.
 
-That gives us a small public API. Comments, search, and reputation can wait. Reading a question returns its answers in posting order; we do not need a ranking algorithm.
+Reading returns answers in posting order. Comments, search, reputation, and ranking can wait.
 
 **Candidate:** What happens if someone votes twice or changes their mind?
 
 **Interviewer:** Each user has at most one active vote per post. They can choose upvote, downvote, or no vote. Repeating the same choice has no additional effect. Self-voting is rejected.
 
-A score alone cannot tell us whether a user already voted. We must remember the user's current choice on each post.
+The opening sequence must produce `1, 1, -1`. A score alone cannot tell us whether that reader already voted.
 
 **Candidate:** Who can accept an answer? Does accepting it close the question?
 
 **Interviewer:** Only the question author can accept, and the answer must belong to that question. They can replace their choice. Further answers remain allowed. An author may answer their own question and accept that answer.
 
-Acceptance belongs to the question. We need zero or one selected answer, with no separate closed state, waiting period, or explicit unaccept operation in this version.
+We need **zero or one selected answer per question**. Acceptance creates no closed state and changes no votes.
 
 **Candidate:** Which invalid actions should the component reject?
 
@@ -65,9 +65,9 @@ User identity can stay an integer. Ordinary maps are enough, and we can derive s
 
 ### Setup Assumptions
 
-The caller already knows the authenticated user's stable ID. We do not check whether it is positive or load a user profile. IDs generated inside `Forum` are trusted; the interview data will not exhaust an integer.
+Authenticated user IDs and internally generated post IDs are trusted. We do not load profiles or handle integer exhaustion in the interview data.
 
-Submitted title/body text, chosen post IDs, vote choices, and acceptance requests are runtime inputs. They can be wrong even though our demo supplies valid examples. A blank-body check therefore belongs in this problem. Rechecking an internally generated answer ID or validating every field of the resulting answer would add no useful protection.
+Submitted text, selected IDs, vote choices, and acceptance requests are **runtime input**. Check these where they can break the contract, even though the demo uses valid examples. Do not revalidate fields of objects our own successful operations created.
 
 All callers use `Forum` for mutations. Domain constructors and mutation methods are package-private, so the demo and other outside packages cannot bypass that entry point. Returned objects expose immutable content and read methods. Memory exhaustion and process failure are outside the rejection guarantee.
 
@@ -102,20 +102,7 @@ Questions and answers both need an ID, author, body, and identical voting behavi
 
 ### `Forum`: one place to enter the component
 
-The caller should not look through collections to find the object that owns an action. `Forum` resolves IDs and delegates. It does not calculate scores or decide whether an answer is eligible for acceptance.
-
-| Requirement | State needed | Why here |
-|---|---|---|
-| Find either kind of post by ID | `posts: Map<Integer, Post>` | Voting needs one shared index |
-| Assign IDs across both kinds | `nextId` | One allocator prevents collisions between questions and answers |
-
-| Caller need | Method | Result or mutation |
-|---|---|---|
-| Publish a question | `askQuestion(userId, title, body)` | Creates, indexes, and returns a `Question` |
-| Reply to a question | `answerQuestion(userId, questionId, body)` | Attaches, indexes, and returns an `Answer` |
-| Set the current vote | `vote(userId, postId, vote)` | Resolves a `Post`, then delegates |
-| Choose an answer | `acceptAnswer(userId, questionId, answerId)` | Resolves a `Question`, then delegates |
-| Read a question | `question(questionId)` | Returns it, rejecting a missing or wrong-kind ID |
+The caller supplies IDs, so something must find the objects before they can enforce their rules. `Forum` owns a **single post index** for voting on either kind of post and one `nextId` counter to avoid collisions. The five agreed actions become its five public methods:
 
 ```text
 Forum
@@ -129,11 +116,11 @@ Forum
   private post(postId): Post
 ```
 
-The private `post()` helper centralizes the failed-lookup check used by voting and question lookup. The `instanceof Question` check in `question()` validates the kind of ID the caller supplied. It is not a type switch implementing separate voting algorithms.
+Creation methods publish and return the new object; voting and acceptance resolve the target and delegate. The private `post()` helper rejects failed lookups. `question()` also checks the object type because an existing answer ID is still the wrong target for a new answer.
 
 **Invariant:** Published post IDs are unique. Every answer attached to a question has the same object reference in the global index. The answer is not copied, and its votes have only one owner.
 
-**Collaborators:** `Forum` creates questions, asks questions to create answers, and invokes the domain mutations. Only this class allocates IDs and modifies `posts`.
+`Forum` creates questions and asks them to create answers. It leaves scoring to `Post` and acceptance eligibility to `Question`. Next we need the state that makes those delegated rules work.
 
 ### `Post`: shared voting, earned by two real callers
 
@@ -141,7 +128,11 @@ The private `post()` helper centralizes the failed-lookup check used by voting a
 
 #### Decision: how much state does a score need?
 
-Suppose user 40 upvotes answer 2 twice, then changes that vote to a downvote. The required scores are `1, 1, -1`.
+Return to the reader in our opening example. Give them user ID 40. Their three calls must behave as follows:
+
+![Three snapshots of answer 2: user 40's upvote is retained on a retry, then replaced by a downvote; scores are 1, 1, and minus 1.](figures/vote-replacement.svg)
+
+*Figure 1. The same user's choice replaces a map entry; it never adds a second vote.*
 
 **Bad: change a counter on every request.** A simple `score += choice` produces `1, 2, 1`. It cannot distinguish a retry from a second voter, or replacement from an additional vote. The counter has discarded information the requirements need.
 
@@ -151,17 +142,7 @@ Suppose user 40 upvotes answer 2 twice, then changes that vote to a downvote. Th
 
 **Recommendation: Implement in interview.** Use the map and derived score. Mention a cached score if frequent reads become a stated requirement; it is a valid alternative, not an automatic improvement.
 
-| Requirement | State needed | Why here |
-|---|---|---|
-| Identify and display a post | Immutable `id`, `authorId`, `body` | Both kinds share these facts |
-| One active vote per user | `votes: Map<Integer, Vote>` | A repeated key replaces the existing choice |
-| Show the score | No score field | Sum the map's active choices |
-
-| Caller or domain need | Method | Result or mutation |
-|---|---|---|
-| Initialize submitted content | Package-private constructor | Checks the body once and assigns immutable fields |
-| Apply a routed vote | Package-private `vote(userId, vote)` | Rejects self-votes, then replaces or removes an entry |
-| Read community feedback | Public `score()` | Sums votes without changing state |
+The shared content fields (`id`, `authorId`, `body`) are immutable. The vote map is the only changing state here. The constructor checks submitted body text once; the routed `vote()` command changes a choice, and `score()` answers the read request.
 
 ```text
 abstract Post
@@ -177,28 +158,21 @@ abstract Post
 
 ### `Question`: own the answer collection and accepted choice
 
-A question adds a title and a collection of answers to the shared post state. Its `LinkedHashMap` gives both lookup by answer ID and deterministic posting order.
+Voting now works for either kind of post. Acceptance has a different owner: it chooses among **one question's answers**. A question therefore adds a title and a `LinkedHashMap` of answers for lookup by ID in posting order.
 
 #### Decision: accepted flags or one reference?
 
 An `accepted` boolean on each answer initially looks convenient for display. After accepting answer 2, a replacement path might mark answer 3 without clearing answer 2. Both now say accepted. Correcting that design requires coordinating the old and new answers on every replacement.
 
-Store `acceptedAnswer` on the question instead. Changing from answer 2 to answer 3 is one assignment after validation. There is no combination of this field that names two answers. The cost is that a caller checks the question's selection when displaying a badge, rather than asking an answer for an independent flag.
+Store `acceptedAnswer` on the question instead. Replacing answer 2 with answer 3 becomes **one assignment after validation**. A caller reads that reference when displaying the selection; there are no two answer flags to coordinate.
+
+![Before and after accepting answer 3: question 1's acceptedAnswer changes from 2 to 3, while both answer scores remain unchanged.](figures/accepted-choice.svg)
+
+*Figure 2. Acceptance moves one reference. The vote state does not participate.*
 
 **Recommendation: Implement in interview.** One reference matches a single choice. Keep voting and acceptance independent: accepting an answer does not increase its score.
 
-| Requirement | State needed | Why here |
-|---|---|---|
-| Display a question heading | Immutable `title` | Answers have no separate title |
-| Own answers and preserve order | `answers: LinkedHashMap<Integer, Answer>` | The collection defines membership |
-| Select zero or one answer | Nullable `acceptedAnswer` | A single reference represents the author's choice |
-
-| Caller or domain need | Method | Result or mutation |
-|---|---|---|
-| Attach a new answer | Package-private `addAnswer(answerId, authorId, body)` | Creates it with this question's ID, then inserts it |
-| Accept or replace an answer | Package-private `acceptAnswer(userId, answerId)` | Checks authority and local membership, then assigns |
-| Read answers in order | Public `answers()` | Returns an unmodifiable list copy |
-| Read the selection | Public `acceptedAnswer()` | Returns the selected answer or null |
+The answer and acceptance commands need two internal methods. The caller's read requirement adds two public queries:
 
 ```text
 Question extends Post
@@ -213,23 +187,13 @@ Question extends Post
 
 **Invariant:** Each attached answer belongs to this question. The accepted reference is either null or an answer in this collection. Only a request carrying the question author's ID can change it.
 
-**Collaborators:** `Forum` supplies a fresh ID; `Question` constructs the `Answer` and owns membership. Answer creation validates submitted body text through `Post` before insertion. Acceptance looks up the answer in this local map, so an existing answer from another question still fails.
+`Forum` supplies a fresh ID; `Question` constructs and attaches the `Answer` after `Post` validates its body. Acceptance uses the local answer map, so an answer from another question fails even if it exists in the forum.
 
 The list copy protects membership from outside mutation. Its answer objects remain live: later votes can change their scores. It is not a historical snapshot. `Question` has no knowledge of other questions or the forum-wide allocator.
 
 ### `Answer`: a post with one fixed parent
 
-`Answer` is a small subclass because an answer already gets identity, text, and voting from `Post`. Its additional fact is which question it answers.
-
-| Requirement | State needed | Why here |
-|---|---|---|
-| Identify an answer's parent | Immutable `questionId` | A returned answer can identify its question without a global scan |
-| Display and vote on the answer | Inherited post state | The rules are identical for both post kinds |
-
-| Domain or caller need | Method | Result |
-|---|---|---|
-| Create a reply | Package-private constructor | Initializes shared content and the parent ID supplied by `Question` |
-| Read score | Inherited `score()` | Uses the same vote representation |
+`Answer` needs just one additional field: immutable `questionId`, so a returned answer can identify its parent without a scan. Its constructor receives that ID from `Question`; display and voting use the inherited `Post` state and methods.
 
 ```text
 Answer extends Post
@@ -240,7 +204,7 @@ Answer extends Post
 
 **Invariant:** An answer never moves between questions. `questionId` comes directly from its creating question, so the constructor does not query the forum to validate it again.
 
-**Collaborators:** `Question` creates it; `Forum` indexes it and routes voting to the inherited behavior. An answer does not decide whether it is accepted. That would give it responsibility for its parent's choice.
+`Question` creates it; `Forum` indexes it and routes votes. The answer never decides whether it is accepted: that would move its parent's choice into the wrong object.
 
 ### `Vote` and the demonstration
 
@@ -260,43 +224,37 @@ Main
 
 ## Final Class Design
 
-The diagram omits routine constructors. `~` means package-private. `Forum` is the mutation entry point; `Post` protects voting; `Question` protects membership and acceptance. The same answer object is reachable from its question and the global index. Only the question stores the accepted choice.
+The diagram focuses on mutation and ownership, omitting routine constructors, display fields, accessors, and method parameters. The class sketches above give the signatures. `~` means package-private. `Forum` routes commands; `Post` protects voting; `Question` protects membership and acceptance. Its answer map and the global index reference the same objects.
 
 ```mermaid
 classDiagram
     class Forum {
       -posts
       -nextId
-      +askQuestion(userId, title, body) Question
-      +answerQuestion(userId, questionId, body) Answer
-      +vote(userId, postId, vote)
-      +acceptAnswer(userId, questionId, answerId)
-      +question(questionId) Question
-    }
-    class Post {
-      +id
-      +authorId
-      +body
-      -votes
-      ~vote(userId, vote)
-      +score() int
-    }
-    class Question {
-      +title
-      -answers
-      -acceptedAnswer
-      ~addAnswer(answerId, authorId, body) Answer
-      ~acceptAnswer(userId, answerId)
-      +answers() List
-      +acceptedAnswer() Answer
-    }
-    class Answer {
-      +questionId
+      +askQuestion() Question
+      +answerQuestion() Answer
+      +vote()
+      +acceptAnswer()
     }
     class Vote {
       UP
       DOWN
       NONE
+    }
+    class Post {
+      +authorId
+      -votes
+      ~vote(userId, vote)
+      +score() int
+    }
+    class Question {
+      -answers
+      -acceptedAnswer
+      ~addAnswer() Answer
+      ~acceptAnswer()
+    }
+    class Answer {
+      +questionId
     }
     Forum --> Post : indexes all posts
     Question --|> Post : extends Post
@@ -340,9 +298,7 @@ void vote(int userId, Vote vote) {
 }
 ```
 
-The public boundary rejects null because allowing it into the map would break a later score read. The domain method does not repeat that check. It owns the author rule because it owns `authorId`. All guards precede the map mutation.
-
-No special branch handles a repeated vote or a direction change. Assigning the same map key already has the desired behavior.
+`Forum` checks null once so it cannot enter the map and break a later score read. `Post` checks the author rule before mutation. **Retries need no special branch**: assigning the same map key already gives the required behavior.
 
 ### 2. Accept only an answer from this question
 
@@ -373,7 +329,7 @@ void acceptAnswer(int userId, int answerId) {
 
 Suppose answer 2 is already accepted. If the caller supplies an answer from question 8, the local lookup fails before the assignment. Answer 2 stays accepted. We never clear the old choice first, so no rollback is needed.
 
-Accepting the same answer again is harmless. Replacing it changes one reference. Accepting the author's own answer is allowed because authority is checked against the question author, not against the answer author. No vote or score changes during this operation.
+The guard compares the caller with the question author, so accepting their own answer is allowed. Repeating a choice is harmless; replacing it follows Figure 2 and leaves scores untouched.
 
 ### 3. Publish an answer without splitting ownership
 
@@ -493,29 +449,91 @@ The automated tests exercise seven distinct areas: posting and ordered reads; vo
 
 ## Extensibility
 
-### Comments, tags, and search: add the requested slice
+These are discussion sketches, **not implemented or executed** in the supplied Java project. Each adds one requirement to the same design.
 
-**Mention if asked.** Comments can be small immutable records in a collection on `Post`, since both questions and answers can receive them. Expose a `Forum.addComment()` operation and a read method; do not make comments votable by inheritance unless required.
+### What if both questions and answers need comments?
 
-Tags belong on `Question`. For a small tag or title search, scan questions first and specify matching rules. Add an index only when the required query cost justifies maintaining it. These features leave the vote map and accepted-reference design intact.
+**Mention if asked.** Put an ordered comment collection on `Post`, because both kinds can receive comments. Use an immutable `Comment(authorId, body)` record; it has no votes or acceptance behavior.
+
+```text
+Forum.addComment(userId, postId, body):
+  post(postId).addComment(userId, body)  // existing lookup rejects missing IDs
+
+Post.addComment(userId, body):
+  reject null or blank body
+  comments.append(Comment(userId, body))
+
+Post.comments():
+  return immutable copy of comments
+```
+
+A blank comment fails before insertion. A comment on answer 2 changes neither its score nor question 1's selection. The existing posting and voting code stays unchanged; the new collection grows with comments. Independent comment IDs become useful only if editing or deletion is requested.
 
 ### Faster score reads: introduce one explicit synchronization rule
 
-**Mention if asked.** Cache a score on `Post` and update it by the difference between the new and old vote values. NONE contributes zero. Every vote mutation must preserve `cachedScore == sum(current votes)`, including retries and removal. The existing vote-lifecycle tests become particularly useful. This trades simpler reads for more write-side responsibility.
+**Mention if asked.** Suppose score reads are now frequent enough that scanning voters matters. Return to the cached-score alternative: add `cachedScore = 0` to `Post` and replace its vote mutation with this delta. `Forum` still validates the choice and resolves the post first.
+
+```text
+Post.vote(userId, choice):
+  reject if userId == authorId
+  old = votes.getOrDefault(userId, NONE)
+  if choice == NONE: votes.remove(userId)
+  else: votes[userId] = choice
+  cachedScore += choice.value - old.value
+
+Post.score():
+  return cachedScore
+```
+
+For our `UP → UP → DOWN` sequence, the deltas are `+1, 0, -2`; the scores remain `1, 1, -1`. Removing the downvote adds 1 and restores zero. Reads become O(1), but **every write must preserve `cachedScore == sum(votes)`**. The vote-lifecycle tests must still pass. This sketch inherits the base's sequential-call assumption.
 
 ### Concurrent calls: protect the complete operation and the read
 
 **Mention if asked; not implemented.** Two threads can read the same `nextId` while publishing answers, then overwrite one another in `posts`. An ordinary vote map is also unsafe to mutate while another thread iterates it for `score()`.
 
-A coarse forum lock is a reasonable first proposal for small workloads. Hold it across ID allocation, attachment, indexing, and publication, and across other state mutations. Reads must use the same protection. The current API returns live objects, so merely adding `synchronized` to `Forum` methods is insufficient: `question.score()` would still run outside that lock.
+A coarse forum lock is a reasonable first step for small workloads. **Protect reads as well as writes.** Our current API returns live objects, so adding `synchronized` to `Forum` methods alone would leave calls such as `question.score()` outside the lock.
 
-Introduce query methods that construct immutable question/answer snapshots under the same forum lock and return those snapshots. Then concurrent callers cannot observe a half-published answer or iterate a changing vote map. Add a concurrent creation test for unique IDs and complete membership. Fine-grained locks require a new contention goal and an explicit lock order.
+The revised API returns IDs from creation commands and immutable data snapshots from reads. All public operations use the same lock. Here is the answer-publication/read boundary; `with` releases the lock even on a rejection:
+
+```text
+Forum.answerQuestion(userId, questionId, body):
+  with forumLock:
+    question = question(questionId)      // existing internal lookup
+    answer = question.addAnswer(nextId, userId, body)
+    posts[nextId] = answer
+    nextId += 1
+    return answer.id                     // no live object escapes
+
+Forum.readQuestion(questionId):
+  with forumLock:
+    question = question(questionId)
+    replies = [AnswerView(a.id, a.authorId, a.body, a.score())
+               for a in question.answers()]
+    return QuestionView(question.id, question.authorId,
+                        question.title, question.body, question.score(),
+                        immutable(replies), idOrNull(question.acceptedAnswer()))
+```
+
+`QuestionView` and `AnswerView` are immutable value records with no domain references. Asking questions, voting, and accepting answers must also take `forumLock`; the old live-object query is no longer public. A reader therefore sees publication entirely before or after the writer, and a score scan cannot overlap a vote mutation. Test concurrent creators for unique IDs and complete membership, and verify an earlier snapshot stays unchanged after a later vote. The cost is serialized access and snapshot copying. Fine-grained locks need a demonstrated contention problem and a new lock-order argument.
 
 ### Persistent storage and reputation: revisit multi-object effects
 
-**Production extension.** Persistence requires transactions around answer publication and uniqueness for a user's vote on a post. The database becomes authoritative; the in-memory maps no longer define durability.
+**Production extension.** Suppose votes now award author reputation and both must survive a restart. Agree on the point policy first; call its value `points(post, vote)`, with `points(post, NONE) = 0`. A repeated choice must award zero extra points. The database becomes authoritative, with a unique vote key `(postId, userId)`.
 
-Reputation introduces state on another entity. Agree on its scoring policy before coding, then apply the effect of replacing or removing a vote exactly once alongside the vote change. Do not award points again for an identical repeated choice. These are additional invariants, so a reputation counter should not be slipped into the base `vote()` method without revisiting the transaction boundary.
+```text
+voteAndUpdateReputation(userId, postId, choice):
+  reject null choice
+  in database transaction:
+    post = load post FOR UPDATE, or reject missing ID
+    reject if userId == post.authorId
+    old = load vote(postId, userId), default NONE
+    delta = points(post, choice) - points(post, old)
+    if choice == NONE: delete vote(postId, userId)
+    else: upsert vote(postId, userId, choice)
+    atomically increment author reputation by delta
+```
+
+The transaction commits both changes or rolls both back. Locking the post serializes vote changes for that post; an atomic author-row increment prevents lost reputation updates from different posts. Every vote/reputation writer must obey this protocol. Repeating an upvote yields `delta = 0`; inject a failure after the vote write and verify neither change commits. Persisting answer publication likewise needs one transaction for its related records. This introduces schema and transaction work, so it stays outside the one-hour implementation.
 
 ## What Is Expected at Each Level
 

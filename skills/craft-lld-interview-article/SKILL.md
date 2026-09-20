@@ -18,7 +18,7 @@ Before drafting, read all of these:
 - `references/comparative-design.md` for contextual design alternatives.
 - `references/design-heuristics.md` for scope, ownership, state, APIs, patterns, and concurrency.
 - `references/class-design.md` for the required per-class derivation.
-- `references/editorial-style.md` for direct, natural prose and the formulaic-writing audit.
+- `references/editorial-style.md` for continuity, selective emphasis, and the prose audit.
 - `references/document-bundle.md` for filenames, PDF parity, appendices, and release checks.
 - `references/quality-rubric.md` for the release gates.
 
@@ -89,6 +89,8 @@ Choose one to four decisions that expose real judgment. Favor state representati
 
 Comparison ladders are optional. Use them only when two or more plausible choices illuminate a consequential tradeoff.
 
+Choose a small running scenario that can connect the opening, the central decision, and verification. Make each section answer a question raised by the previous one. Allocate explanation to uncertainty: a subtle invariant deserves more space than a routine constructor. Consult `references/editorial-research.md` when calibrating this reading experience or revising an existing article.
+
 ### 5. Develop contextual alternatives
 
 For each selected comparison:
@@ -108,21 +110,25 @@ Use Bad, Good, and Great only when those labels fit the evidence. Valid shapes i
 Start from the public entry point, then move to collaborators. For every central class, include:
 
 1. responsibility and reason to exist;
-2. requirement-to-state table;
-3. requirement-or-caller-need-to-method table;
+2. requirement-to-state derivation;
+3. requirement-or-caller-need-to-method derivation;
 4. compact interface sketch;
 5. owned invariant and knowledge boundary;
 6. collaborators and mutation responsibility.
 
 Compact records, enums, exceptions, and helpers may share a grouped subsection. Do not reduce Class Design to an explanation of the orchestrator.
 
+These are coverage obligations, not six repeated presentation blocks. Use tables for meaningful mappings, compact prose for obvious ones, and let the sketch supply exact signatures. Do not restate every row around the sketch.
+
 Resolve abstractions during this derivation when the repeated shape becomes visible. Follow with one consolidated Final Class Design.
 
 ### 7. Draw the smallest useful model
 
-Include a synchronized UML-lite class diagram for the final non-trivial design. Add a state, sequence, data-structure, or race diagram only when it materially shortens the explanation.
+Include a synchronized UML-lite class diagram for the final non-trivial design. Also look for the hardest behavior to picture: a before/after object snapshot, state transition, allocation, or race. Put an explanatory figure at that decision when it saves the reader mental reconstruction. A final class diagram is not a substitute for a useful scenario visual; neither is a decorative illustration.
 
 Keep names identical across prose, diagrams, and code. A simple junior solution may need only the class diagram and one small state diagram.
+
+Use original Mermaid or local SVG figures with informative captions and alt text. Preserve them in both Markdown and PDF. Use selective bold for decisive rules and tradeoffs, not every identifier or sentence.
 
 ### 8. Implement the interview core
 
@@ -184,7 +190,7 @@ Apply `references/quality-rubric.md`, including the prose audit. Revise until ev
 
 ### 12. Finish with extensions and level expectations
 
-Add two to four likely interviewer follow-ups. Describe localized changes rather than rewriting the system.
+Add two to four likely interviewer follow-ups. For each behavioral change, explain the new requirement and existing owner, show a compact pseudocode or code delta, then replay a revealing case and state the new cost or correctness obligation. See `references/article-architecture.md` for the extension contract. Label these sketches **not implemented**; do not add them to the runnable base or claim they were executed. A purely conceptual follow-up may omit code when there is no useful concrete delta, with the reason made clear.
 
 End with junior, mid-level, and senior expectations for the same problem. Give special emphasis to the requested level.
 

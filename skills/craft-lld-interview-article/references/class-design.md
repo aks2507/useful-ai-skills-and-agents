@@ -20,6 +20,8 @@ For each central class, cover:
 
 Use small tables when they expose the derivation. Use prose when a table would have only one obvious row.
 
+Coverage does not require repeating a fact as prose, a state table, a method table, a sketch, and a closing recap. Choose one primary representation for each fact. A compact class can explain its state and caller needs in a paragraph, give the signatures, and identify its invariant/boundary in a sentence. Keep every central class visible; remove repeated explanation, not class coverage. Spend the saved space on the decisions a reader could plausibly get wrong.
+
 ## Supporting types
 
 Group types only when none deserves a full lifecycle discussion:

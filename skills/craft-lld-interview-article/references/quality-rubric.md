@@ -43,6 +43,15 @@ Release an article only when every mandatory gate passes. Use the score to guide
 - Diagram names and relationships match the final code.
 - The article uses original prose and does not mimic a publisher's wording or distinctive examples.
 - Formulaic transitions, repeated contrast templates, empty intensifiers, and monotonous cadence have been revised.
+- A concrete scenario connects the central decision and its verification; adjacent sections advance the reasoning instead of restarting it.
+- Class coverage is complete without mechanically repeating every fact in prose, two tables, and a sketch. Explanation is weighted toward non-obvious decisions.
+- Selective bold exposes important rules and tradeoffs. Any scenario figure has a teaching purpose, useful caption/alt text, and an accurate, legible rendering in both formats.
+
+### Extension integrity
+
+- Behavioral follow-ups include a localized pseudocode/code delta, an explanation of the owner/seam, and a revealing case or new correctness obligation.
+- New logic is visible, unchanged operations are named, and sketches preserve relevant validation and atomicity boundaries.
+- Sketches are labeled not implemented and remain separate from the runnable interview core; purely conceptual exceptions explain why code would be premature.
 
 ### Implementation integrity
 
@@ -77,8 +86,8 @@ Score each dimension from 0 to 5:
 | Source organization | Packages teach useful boundaries without framework-like ceremony |
 | Verification | Mechanical tests plus a convincing narrative replay |
 | Document parity | Named Markdown and PDF agree; the PDF appendix is complete |
-| Extension design | Follow-ups remain localized and avoid premature abstraction |
-| Editorial quality | Natural pacing, concise transitions, original voice |
+| Extension design | Explained code deltas, localized changes, explicit cost and verification |
+| Editorial quality | Connected reasoning, selective detail, useful emphasis, original voice |
 
 Aim for at least 54/65 with no dimension below 3. Mandatory gates still override the numeric score.
 
@@ -99,5 +108,7 @@ Ask:
 11. Which em dash, “not X but Y” contrast, or generic transition is doing habitual rather than necessary work?
 12. Which guard, helper, accessor, or test exists only to harden trusted setup or support an unrequested behavior?
 13. Does the appendix quietly expand the application beyond what the candidate can type and explain?
+14. Which paragraph, table, or figure repeats a settled point without adding a consequence?
+15. Which extension promises behavior that its sketch does not actually show?
 
 Revise any positive finding before release.

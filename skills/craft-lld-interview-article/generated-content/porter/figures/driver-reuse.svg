@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="410" viewBox="0 0 1080 410">
+  <rect width="1080" height="410" rx="16" fill="#f6f8fb"/>
+  <g font-family="Arial, sans-serif" fill="#182c40">
+    <text x="30" y="42" font-size="25" font-weight="bold">Driver 9: claim, release, and reuse</text>
+    <g fill="white" stroke="#c4ced9" stroke-width="2">
+      <rect x="24" y="67" width="324" height="312" rx="12"/>
+      <rect x="378" y="67" width="324" height="312" rx="12"/>
+      <rect x="732" y="67" width="324" height="312" rx="12"/>
+    </g>
+    <g font-size="22" font-weight="bold">
+      <text x="44" y="104">1. assign() claims driver</text>
+      <text x="398" y="104">2. deliver(), then release()</text>
+      <text x="752" y="104">3. assign() for next job</text>
+    </g>
+    <g fill="#e8efff" stroke="#4467a9" stroke-width="2">
+      <rect x="44" y="125" width="284" height="92" rx="8"/>
+      <rect x="752" y="229" width="284" height="84" rx="8"/>
+    </g>
+    <g fill="#eef3f3" stroke="#627e7e" stroke-width="2">
+      <rect x="398" y="125" width="284" height="92" rx="8"/>
+      <rect x="752" y="125" width="284" height="92" rx="8"/>
+    </g>
+    <g font-size="21">
+      <text x="60" y="154">Booking 1: ASSIGNED</text>
+      <text x="60" y="189">driver = 9</text>
+      <text x="414" y="154">Booking 1: DELIVERED</text>
+      <text x="414" y="189">driver = 9</text>
+      <text x="768" y="154">Booking 1: DELIVERED</text>
+      <text x="768" y="189">driver = 9</text>
+      <text x="768" y="258">Booking 2: ASSIGNED</text>
+      <text x="768" y="292">driver = 9</text>
+    </g>
+    <g font-size="21" font-weight="bold">
+      <text x="44" y="255">available = false</text>
+      <text x="398" y="255">available = true</text>
+      <text x="752" y="352">available = false</text>
+    </g>
+    <g font-size="20">
+      <text x="44" y="304">Another truck request?</text>
+      <text x="44" y="335">Reject: no free driver.</text>
+      <text x="398" y="304">Keep the booking record.</text>
+      <text x="398" y="335">Update the driver's flag.</text>
+    </g>
+  </g>
+  <g stroke="#5b7189" stroke-width="3" fill="none">
+    <path d="M352 226 L371 226 M365 220 L372 226 L365 232"/>
+    <path d="M706 226 L725 226 M719 220 L726 226 L719 232"/>
+  </g>
+</svg>

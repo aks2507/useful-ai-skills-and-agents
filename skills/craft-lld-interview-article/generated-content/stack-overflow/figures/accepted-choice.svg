@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="350" viewBox="0 0 1000 350" role="img" aria-labelledby="title desc">
+  <title id="title">One question, one accepted answer reference</title>
+  <desc id="desc">Question 1 first points to answer 2, then to answer 3. Answer 2 keeps score minus 1 and answer 3 keeps score zero.</desc>
+  <rect width="1000" height="350" rx="18" fill="#f4f7fc"/>
+  <g font-family="Arial" fill="#172033">
+    <text x="28" y="37" font-size="22" font-weight="bold">The author replaces the accepted answer</text>
+    <g fill="#ffffff" stroke="#c8d4e4" stroke-width="2">
+      <rect x="28" y="57" width="452" height="265" rx="12"/>
+      <rect x="520" y="57" width="452" height="265" rx="12"/>
+    </g>
+    <g font-size="20" font-weight="bold">
+      <text x="50" y="91">Before</text><text x="542" y="91">After acceptAnswer(10, 1, 3)</text>
+    </g>
+    <g fill="#eaf1ff" stroke="#315cf5" stroke-width="2">
+      <rect x="50" y="110" width="408" height="67" rx="8"/>
+      <rect x="542" y="110" width="408" height="67" rx="8"/>
+    </g>
+    <g font-size="21">
+      <text x="67" y="137">Question 1</text><text x="559" y="137">Question 1</text>
+      <text x="67" y="162" fill="#214eb4">acceptedAnswer = 2</text><text x="559" y="162" fill="#214eb4">acceptedAnswer = 3</text>
+    </g>
+    <g fill="#ffffff" stroke="#c8d4e4" stroke-width="2">
+      <rect x="50" y="234" width="192" height="67" rx="8"/><rect x="266" y="234" width="192" height="67" rx="8"/>
+      <rect x="542" y="234" width="192" height="67" rx="8"/><rect x="758" y="234" width="192" height="67" rx="8"/>
+    </g>
+    <g font-size="20">
+      <text x="66" y="260">Answer 2</text><text x="282" y="260">Answer 3</text>
+      <text x="558" y="260">Answer 2</text><text x="774" y="260">Answer 3</text>
+      <text x="66" y="285">score = −1</text><text x="282" y="285">score = 0</text>
+      <text x="558" y="285">score = −1</text><text x="774" y="285">score = 0</text>
+    </g>
+    <g stroke="#315cf5" stroke-width="3" fill="none">
+      <path d="M254 177 V203 H146 V226 M138 218 L146 226 L154 218"/>
+      <path d="M746 177 V203 H854 V226 M846 218 L854 226 L862 218"/>
+    </g>
+  </g>
+</svg>

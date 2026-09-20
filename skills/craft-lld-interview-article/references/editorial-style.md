@@ -8,6 +8,26 @@ Use original wording. Do not reproduce a publisher's distinctive analogies, joke
 
 ## Cadence
 
+### Give the reader a reason to continue
+
+Open with a small domain action that exposes the central tension. Carry its identifiers and state through the main comparison and verification. The interest should come from seeing a plausible solution meet a revealing case, then watching one small design change fix it. Do not add fictional drama, clickbait, or an unrelated analogy.
+
+Make adjacent paragraphs causally connected: what have we learned, what question is still open, and why is this the next thing to decide? A useful transition names the consequence. A section introduction that only announces the section can usually go.
+
+### Spend explanation where judgment is needed
+
+Prefer one primary explanation of each fact. A table may derive ownership, code may state the operation, and the next paragraph may explain a surprising consequence. They should not all say the same thing. A purposeful replay is valuable when it now proves something new.
+
+Do not narrate a getter, loop, or constructor line by line for an experienced reader. Explain why a field belongs here, why validation precedes this mutation, or what breaks if the order changes. For a junior reader, explain unfamiliar mechanics once before using them; tight prose must not remove prerequisites.
+
+### Make the page readable at two speeds
+
+Headings and selective **bold** should let a scanning reader find the design decisions. The paragraphs between them should still form a continuous argument for someone reading end to end. Bold the decisive rule, changed assumption, or tradeoff at first importance. Use backticks for names and syntax. Avoid entire bold paragraphs, bolding every class mention, and arbitrary emphasis quotas.
+
+Use a figure where the reader would otherwise have to build and compare mental pictures. Write its takeaway caption first, then draw only what supports it. Match the adjacent example and use labels as well as color. See `diagrams.md`. Do not interrupt a working explanation with a decorative image or pull quote that merely repeats it.
+
+### Choose the form for the idea
+
 Let the material determine the form:
 
 - dialogue for ambiguity and scope;
@@ -78,3 +98,10 @@ Read the article once without code. Revise when:
 4. a design label appears without a counterexample;
 5. an extension repeats the base design;
 6. the conclusion merely recites all headings.
+
+Then perform two more passes:
+
+- **Continuity pass:** read the opening, section transitions, figure captions, and verification. Can a reader follow one question through to its answer? Remove an unexplained jump or a settled point that is needlessly reopened.
+- **Scan pass:** read only headings and bold phrases, then inspect the rendered PDF. Do they locate the decisions without becoming a second full article? Check that bold is visibly bold and that diagrams remain legible at normal reading size.
+
+For each extension, cover its prose and ask whether the sketch shows the actual new behavior. Then cover the sketch and ask whether the prose explains why the change is needed and what it costs. Both views must agree. These reviews require editorial judgment; a word count or format validator cannot prove coherence.

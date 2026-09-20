@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="390" viewBox="0 0 1000 390">
+  <rect width="1000" height="390" rx="16" fill="#f6f8fb"/>
+  <rect x="24" y="56" width="611" height="184" rx="14" fill="#e8efff" stroke="#9aafd4" stroke-width="2"/>
+  <g font-family="Arial, sans-serif" fill="#182c40">
+    <text x="32" y="37" font-size="25" font-weight="bold">Transition first; release only after success</text>
+    <text x="44" y="90" font-size="21" font-weight="bold">While active: driver.available = false</text>
+    <g fill="white" stroke="#4467a9" stroke-width="2">
+      <rect x="55" y="142" width="225" height="62" rx="9"/>
+      <rect x="385" y="142" width="225" height="62" rx="9"/>
+    </g>
+    <g fill="#eef3f3" stroke="#627e7e" stroke-width="2">
+      <rect x="735" y="142" width="225" height="62" rx="9"/>
+      <rect x="55" y="298" width="225" height="62" rx="9"/>
+    </g>
+    <g font-size="23" font-weight="bold" text-anchor="middle">
+      <text x="167" y="181">ASSIGNED</text>
+      <text x="497" y="181">IN_TRANSIT</text>
+      <text x="847" y="181">DELIVERED</text>
+      <text x="167" y="337">CANCELLED</text>
+    </g>
+    <g font-size="20" text-anchor="middle">
+      <text x="331" y="132">pickUp()</text>
+      <text x="670" y="132">deliver()</text>
+      <text x="847" y="237">then release()</text>
+    </g>
+    <text x="185" y="272" font-size="20">cancel(customerId): owner only</text>
+    <text x="310" y="335" font-size="20">then release(); terminal states cannot transition again</text>
+  </g>
+  <g stroke="#425d7b" stroke-width="3" fill="none">
+    <path d="M280 173 L377 173 M367 166 L378 173 L367 180"/>
+    <path d="M610 173 L727 173 M717 166 L728 173 L717 180"/>
+    <path d="M167 204 L167 290 M160 280 L167 291 L174 280"/>
+  </g>
+</svg>

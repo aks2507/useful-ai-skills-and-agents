@@ -48,6 +48,10 @@ The output defaults to the Markdown path with a `.pdf` suffix. The builder uses 
 
 The built-in renderer draws a compact vector form of supported Mermaid class, state, and sequence diagrams. Unsupported diagram syntax remains visible as a labeled source block; treat that fallback as a release failure when the diagram is required to understand the design.
 
+Local `![alt text](figures/name.svg)` and PNG/JPEG images are embedded in the PDF at their original aspect ratio. SVG support requires `svglib` in the selected Python runtime. Keep assets inside the article bundle, self-contained and free of external resources; the builder does not download images. Captions remain ordinary Markdown paragraphs so both formats share their wording. Never silently omit an image when a dependency or asset is missing.
+
+For a fresh Python environment, install `reportlab`, `pypdf`, and `svglib`. Rendering regression tests run from the skill directory with `python3 -m unittest discover -s tests`. These checks cover font faces, image embedding, caption grouping, and diagram relationship parsing; they do not replace page inspection.
+
 ## Visual verification
 
 Render every PDF page to PNG and inspect the montage plus any dense pages at full size. Check:
@@ -58,6 +62,8 @@ Render every PDF page to PNG and inspect the montage plus any dense pages at ful
 - code lines wrap or continue legibly;
 - headings stay with following content when practical;
 - no accidental blank pages;
+- body emphasis and headings use actual bold faces, not regular-font substitutes;
+- figures preserve their captions, relationship types, and readable labels;
 - appendix paths, code, and manifest are complete.
 
 Text extraction is useful for completeness checks but does not replace visual inspection.

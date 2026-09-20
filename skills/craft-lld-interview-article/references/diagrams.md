@@ -12,6 +12,14 @@ Use diagrams to compress relationships or transitions that would otherwise requi
 - Explain the diagram in one short paragraph. Never make the reader reverse-engineer the lesson.
 - Recheck diagrams after changing the implementation.
 
+## Show behavior, not just architecture
+
+At the hardest decision, ask what the reader needs to picture. Good choices include two object snapshots before/after a command, a worked board or resource layout, the same requests under two policies, and a rejected transition. Use the same identifiers as the text. A UML class diagram explains relationships; it cannot by itself explain a changing vote or a scheduling outcome.
+
+Write a one-sentence takeaway caption before drawing, and place that caption below the figure. Give each figure one teaching job. Keep a consistent visual vocabulary: stable facts subdued, changed state accented, rejected operation labeled explicitly. Never make color the only carrier of meaning. Prefer a few readable panels to one crowded diagram. Translate animations into static key frames for the PDF.
+
+Create original vector assets when Mermaid is a poor fit. Store local SVG or PNG assets under the bundle's `figures/`, reference them with standard Markdown image syntax, and supply meaningful alt text. SVGs must be self-contained: no scripts, imported fonts, external images, or remote references. Avoid stock photos, copied publisher artwork, and generated decoration. The smallest useful visual wins; there is no image-count quota.
+
 ## UML-lite class diagram
 
 Use for ownership, composition, and real polymorphic boundaries.
@@ -98,7 +106,7 @@ Mermaid has no dedicated data-structure notation. Use a small flowchart for indi
 
 Before publishing, verify:
 
-1. Every diagram parses as Mermaid.
+1. Every Mermaid diagram parses, and every local figure resolves and renders.
 2. Names match the final design and implementation.
 3. Arrows express the intended ownership or call direction.
 4. The prose states what the reader should notice.
@@ -106,3 +114,5 @@ Before publishing, verify:
 6. Any additional state, sequence, race, or data-structure diagram would make the explanation materially harder if removed; otherwise remove it.
 
 Render diagrams in both output formats. `scripts/build_pdf.py` supports compact class, state, and sequence diagrams. If a required construct falls back to source text in the PDF, either simplify the diagram to supported UML-lite syntax or use a renderer that can embed it. Do not claim visual validation from syntax inspection alone.
+
+Check arrowheads and multiplicities in the PDF, not only in the Markdown source. A renderer that turns inheritance or composition into a generic arrow changes the lesson. Check text size at page scale; reduce the content before shrinking labels. Local SVGs use the optional `svglib` package in the PDF builder; raster figures use ReportLab's image support.
